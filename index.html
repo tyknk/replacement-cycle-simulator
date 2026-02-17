@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>代替え期間比較シミュレーター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --ink-light: #4a4a4a;
+      --ink-muted: #7a7a7a;
+      --paper: #f7f5f0;
+      --paper-warm: #ede9e0;
+      --card: #ffffff;
+      --border: #d8d2c4;
+      --border-light: #e8e4da;
+
+      --plan-a: #2d6a8a;
+      --plan-a-bg: #e8f0f4;
+      --plan-b: #8a4a2d;
+      --plan-b-bg: #f4ece8;
+      --saving: #3d7a5a;
+      --saving-bg: #e8f4ed;
+      --loss: #a04040;
+      --loss-bg: #f4e8e8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', 'Zen Kaku Gothic New', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== ヘッダー ===== */
+    .header {
+      background: transparent;
+      border-bottom: 1px solid var(--border);
+      padding: 18px 24px 14px;
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .print-btn {
+      margin-left: auto;
+      padding: 6px 18px;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--ink-light);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      align-self: center;
+    }
+    .print-btn:hover {
+      background: var(--card);
+      border-color: var(--ink-muted);
+    }
+
+    .print-params {
+      display: none;
+    }
+
+    .header h1 {
+      font-family: 'Zen Kaku Gothic New', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: 0.08em;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .header p {
+      font-size: 0.8rem;
+      color: var(--ink-muted);
+      margin: 0;
+    }
+
+    /* ===== コンテナ ===== */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* ===== KPIカード ===== */
+    .kpi-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .kpi-card.plan-a {
+      border-top: 3px solid var(--plan-a);
+    }
+
+    .kpi-card.plan-b {
+      border-top: 3px solid var(--plan-b);
+    }
+
+    .kpi-card.saving {
+      border-top: 3px solid var(--saving);
+    }
+
+    .kpi-card.loss {
+      border-top: 3px solid var(--loss);
+    }
+
+    .kpi-label {
+      font-size: 0.8rem;
+      color: var(--ink-muted);
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .kpi-sublabel {
+      font-size: 0.7rem;
+      color: var(--ink-muted);
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-family: 'Zen Kaku Gothic New', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .kpi-card.plan-a .kpi-value { color: var(--plan-a); }
+    .kpi-card.plan-b .kpi-value { color: var(--plan-b); }
+    .kpi-card.saving .kpi-value { color: var(--saving); }
+    .kpi-card.loss .kpi-value { color: var(--loss); }
+
+    .kpi-annual {
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+      margin-top: 6px;
+    }
+
+    .kpi-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 3px;
+      margin-top: 8px;
+    }
+
+    .kpi-card.saving .kpi-badge {
+      background: var(--saving-bg);
+      color: var(--saving);
+    }
+
+    .kpi-card.loss .kpi-badge {
+      background: var(--loss-bg);
+      color: var(--loss);
+    }
+
+    /* ===== メインレイアウト ===== */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    /* ===== 入力パネル ===== */
+    .input-panel {
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .input-section {
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .input-section:last-child {
+      border-bottom: none;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .section-header:hover {
+      background: var(--paper);
+    }
+
+    .section-header h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .section-toggle {
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+      transition: transform 0.2s;
+    }
+
+    .section-toggle.collapsed {
+      transform: rotate(-90deg);
+    }
+
+    .section-body {
+      padding: 0 16px 16px;
+    }
+
+    .section-body.collapsed {
+      display: none;
+    }
+
+    /* ===== 入力フィールド ===== */
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--ink-light);
+      margin-bottom: 6px;
+    }
+
+    .field-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .field-control input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .field-control input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--ink-light);
+      cursor: pointer;
+      border: 2px solid var(--card);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .field-control input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--ink-light);
+      cursor: pointer;
+      border: 2px solid var(--card);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--card);
+      overflow: hidden;
+      min-width: 110px;
+    }
+
+    .input-wrap input[type="text"] {
+      width: 80px;
+      border: none;
+      outline: none;
+      padding: 5px 6px;
+      font-size: 0.8rem;
+      font-family: 'Noto Sans JP', sans-serif;
+      text-align: right;
+      color: var(--ink);
+      background: transparent;
+    }
+
+    .input-unit {
+      font-size: 0.7rem;
+      color: var(--ink-muted);
+      padding-right: 6px;
+      white-space: nowrap;
+    }
+
+    /* ===== グラフエリア ===== */
+    .chart-area {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 20px;
+    }
+
+    .chart-card h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 16px;
+    }
+
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 300px;
+    }
+
+    /* ===== 年別比較表 ===== */
+    .table-section {
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+
+    .table-section h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 16px;
+    }
+
+    .cost-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .cost-table thead th {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .cost-table thead th.plan-a-header {
+      color: var(--plan-a);
+    }
+
+    .cost-table thead th.plan-b-header {
+      color: var(--plan-b);
+    }
+
+    .cost-table tbody td {
+      border: 1px solid var(--border-light);
+      padding: 7px 12px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .cost-table tbody td:nth-child(2),
+    .cost-table tbody td:nth-child(4) {
+      white-space: normal;
+      min-width: 140px;
+    }
+
+    .cost-table tbody td:first-child {
+      text-align: center;
+      font-weight: 500;
+      background: var(--paper);
+    }
+
+    .cost-table tbody tr.highlight-purchase {
+      background: #fefcf0;
+    }
+
+    .cost-table tbody tr.highlight-sale {
+      background: #f0fef4;
+    }
+
+    .cost-table tbody tr.row-total {
+      font-weight: 700;
+      background: var(--paper-warm);
+    }
+
+    .cost-table tbody tr.row-total td {
+      border-top: 2px solid var(--border);
+    }
+
+    .diff-positive {
+      color: var(--saving);
+    }
+
+    .diff-negative {
+      color: var(--loss);
+    }
+
+    .event-label {
+      font-size: 0.65rem;
+      display: block;
+      color: var(--ink-muted);
+      font-weight: 400;
+    }
+
+    .cost-breakdown {
+      font-size: 0.62rem;
+      color: var(--ink-muted);
+      display: block;
+      margin-top: 2px;
+      line-height: 1.4;
+      white-space: normal;
+    }
+
+    /* ===== 説明・注記 ===== */
+    .intro {
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      font-size: 0.8rem;
+      color: var(--ink-light);
+      line-height: 1.8;
+    }
+
+    .intro summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--ink);
+      font-size: 0.85rem;
+    }
+
+    .intro p {
+      margin-top: 8px;
+    }
+
+    .field-note {
+      font-size: 0.68rem;
+      color: var(--ink-muted);
+      margin-top: 3px;
+      line-height: 1.5;
+    }
+
+    /* ===== モード切替タブ ===== */
+    .mode-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--paper-warm);
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 12px 16px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--ink-muted);
+      background: transparent;
+      border: none;
+      transition: background 0.2s, color 0.2s;
+      user-select: none;
+    }
+
+    .mode-tab:hover {
+      background: rgba(255,255,255,0.5);
+    }
+
+    .mode-tab.active {
+      background: var(--card);
+      color: var(--ink);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .mode-tab-sub {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--ink-muted);
+      margin-top: 2px;
+    }
+
+    .notes-section {
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 24px;
+      font-size: 0.78rem;
+      color: var(--ink-light);
+      line-height: 1.8;
+    }
+
+    .notes-section h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 12px;
+    }
+
+    .notes-section h4 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ink-light);
+      margin-top: 14px;
+      margin-bottom: 4px;
+    }
+
+    .notes-section ul {
+      padding-left: 1.2em;
+      margin: 4px 0;
+    }
+
+    .notes-section li {
+      margin-bottom: 2px;
+    }
+
+
+    /* ===== フッター ===== */
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.7rem;
+      color: var(--ink-muted);
+      border-top: 1px solid var(--border-light);
+    }
+
+    /* ===== レスポンシブ ===== */
+    @media (max-width: 900px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .kpi-section {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .mode-tabs {
+        flex-direction: column;
+      }
+
+      .kpi-card {
+        padding: 14px;
+      }
+
+      .kpi-value {
+        font-size: 1.3rem;
+      }
+
+      .container {
+        padding: 12px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .header h1 {
+        font-size: 1.1rem;
+      }
+
+      .chart-container {
+        height: 250px;
+      }
+
+      .cost-table {
+        font-size: 0.72rem;
+      }
+
+      .cost-table tbody td,
+      .cost-table thead th {
+        padding: 5px 6px;
+      }
+    }
+
+    /* ===== 印刷対応 (A4横 1ページ) ===== */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 8mm 10mm;
+      }
+
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+      body {
+        background: white;
+        font-size: 8pt;
+        margin: 0;
+        padding: 0;
+      }
+
+      .header {
+        border-bottom: 2px solid #333;
+        padding: 4px 0;
+        margin-bottom: 4px;
+      }
+      .header h1 { font-size: 13pt; margin: 0; }
+      .header p { font-size: 8pt; margin: 1px 0 0; }
+      .print-btn { display: none; }
+
+      .container { max-width: none; padding: 0; gap: 0; }
+
+      /* 画面専用要素を非表示 */
+      details.intro,
+      .mode-tabs,
+      .input-panel,
+      .notes-section { display: none !important; }
+
+      /* KPI を横一列コンパクトに */
+      .kpi-section {
+        display: flex !important;
+        gap: 8px;
+        margin: 6px 0 4px;
+      }
+      .kpi-card {
+        padding: 6px 10px;
+        flex: 1;
+        break-inside: avoid;
+      }
+      .kpi-label { font-size: 8pt; }
+      .kpi-sublabel { font-size: 6.5pt; margin-top: 0; }
+      .kpi-value { font-size: 14pt; }
+      .kpi-annual { font-size: 7pt; }
+      .kpi-badge { font-size: 6.5pt; padding: 1px 6px; }
+
+      /* グラフ */
+      .main-layout {
+        display: block;
+        margin: 0;
+      }
+      .chart-area { width: 100%; }
+      .chart-card {
+        padding: 4px 6px;
+        break-inside: avoid;
+      }
+      .chart-card h3 { font-size: 8pt; margin-bottom: 2px; }
+      .chart-container { height: 170px !important; }
+
+      /* テーブル */
+      .table-section {
+        margin: 4px 0 0;
+        padding: 0;
+        break-inside: avoid;
+      }
+      .table-section h3 { font-size: 8pt; margin: 0 0 2px; }
+      .cost-table { font-size: 6.5pt; }
+      .cost-table thead th { padding: 2px 4px; font-size: 6.5pt; }
+      .cost-table tbody td { padding: 2px 4px; }
+      .cost-table .detail-text { font-size: 5.5pt; }
+      .cost-table .total-row td { font-size: 7pt; }
+
+      /* 印刷用入力条件サマリー */
+      .print-params {
+        display: block !important;
+        font-size: 6.5pt;
+        color: #444;
+        border-top: 1px solid #ccc;
+        padding-top: 3px;
+        margin-top: 4px;
+        line-height: 1.6;
+      }
+      .print-params-title {
+        font-weight: 700;
+        font-size: 7pt;
+        margin-bottom: 1px;
+      }
+      .print-params-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 16px;
+      }
+      .print-params-grid span {
+        white-space: nowrap;
+      }
+
+      /* チャート画像（Canvas→img変換時） */
+      .print-chart-img {
+        width: 100%;
+        height: auto;
+        max-height: 180px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>代替え期間比較シミュレーター</h1>
+    <p id="header-subtitle">10年1台 vs 5年×2台 ─ 乗り替えサイクルの総コスト比較</p>
+    <button class="print-btn" onclick="printPage()">印刷</button>
+  </div>
+
+  <div class="container">
+
+    <!-- 説明 -->
+    <details class="intro" open>
+      <summary>このツールについて</summary>
+      <p>
+        車を「長く1台乗り続ける」場合と「短期間で乗り替えていく」場合の総コストを比較するツールです。<br>
+        3つの比較期間から選べます：
+      </p>
+      <ul style="margin:0.3em 0 0.2em 1.2em; line-height:1.9; font-size:0.97em;">
+        <li><strong>9年比較</strong> ─ <span style="color:var(--plan-a)">9年1台</span> vs <span style="color:var(--plan-b)">3年×3台</span>（初回車検前に乗り替え）</li>
+        <li><strong>10年比較</strong> ─ <span style="color:var(--plan-a)">10年1台</span> vs <span style="color:var(--plan-b)">5年×2台</span></li>
+        <li><strong>15年比較</strong> ─ <span style="color:var(--plan-a)">15年1台</span> vs <span style="color:var(--plan-b)">5年×3台</span></li>
+      </ul>
+      <p style="margin-top:0.3em;">
+        いずれも比較期間の最後に「次の新車を購入した状態」で計算しています。
+      </p>
+    </details>
+
+    <!-- モード切替タブ -->
+    <div class="mode-tabs">
+      <div class="mode-tab" id="tab-9yr" onclick="switchMode('9yr')">
+        9年比較
+        <span class="mode-tab-sub">9年1台 vs 3年×3台</span>
+      </div>
+      <div class="mode-tab active" id="tab-10yr" onclick="switchMode('10yr')">
+        10年比較
+        <span class="mode-tab-sub">10年1台 vs 5年×2台</span>
+      </div>
+      <div class="mode-tab" id="tab-15yr" onclick="switchMode('15yr')">
+        15年比較
+        <span class="mode-tab-sub">15年1台 vs 5年×3台</span>
+      </div>
+    </div>
+
+    <!-- KPIカード -->
+    <div class="kpi-section">
+      <div class="kpi-card plan-a">
+        <div class="kpi-label">10年1台 乗り続け</div>
+        <div class="kpi-sublabel">10年間の総コスト</div>
+        <div class="kpi-value" id="kpi-total-a">¥0</div>
+        <div class="kpi-annual" id="kpi-annual-a">年間平均 ¥0</div>
+      </div>
+      <div class="kpi-card plan-b">
+        <div class="kpi-label">5年×2台 乗り替え</div>
+        <div class="kpi-sublabel">10年間の総コスト</div>
+        <div class="kpi-value" id="kpi-total-b">¥0</div>
+        <div class="kpi-annual" id="kpi-annual-b">年間平均 ¥0</div>
+      </div>
+      <div class="kpi-card saving" id="kpi-diff-card">
+        <div class="kpi-label" id="kpi-diff-label">差額</div>
+        <div class="kpi-sublabel" id="kpi-diff-sublabel">5年×2台の方がお得</div>
+        <div class="kpi-value" id="kpi-diff-value">¥0</div>
+        <div class="kpi-annual" id="kpi-diff-annual">年間 ¥0 の差</div>
+        <span class="kpi-badge" id="kpi-diff-badge">お得</span>
+      </div>
+    </div>
+
+    <!-- メインレイアウト -->
+    <div class="main-layout">
+
+      <!-- 入力パネル -->
+      <div class="input-panel">
+
+        <!-- 車両価格セクション -->
+        <div class="input-section">
+          <div class="section-header" onclick="toggleSection(this)">
+            <h3>車両価格</h3>
+            <span class="section-toggle">▼</span>
+          </div>
+          <div class="section-body">
+            <div class="field">
+              <label class="field-label">新車購入価格</label>
+              <div class="field-control">
+                <input type="range" id="slider-purchase-price" min="1000000" max="8000000" step="100000" value="4800000">
+                <div class="input-wrap">
+                  <input type="text" id="input-purchase-price" value="4,800,000">
+                  <span class="input-unit">円</span>
+                </div>
+              </div>
+            </div>
+            <div id="field-wrap-resale-3yr" style="display:none;">
+              <div class="field">
+                <label class="field-label">3年後売却額（残価）</label>
+                <div class="field-control">
+                  <input type="range" id="slider-resale-3yr" min="0" max="5000000" step="100000" value="3000000">
+                  <div class="input-wrap">
+                    <input type="text" id="input-resale-3yr" value="3,000,000">
+                    <span class="input-unit">円</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="field-wrap-resale-5yr">
+              <div class="field">
+                <label class="field-label">5年後売却額（残価）</label>
+                <div class="field-control">
+                  <input type="range" id="slider-resale-5yr" min="0" max="5000000" step="100000" value="2300000">
+                  <div class="input-wrap">
+                    <input type="text" id="input-resale-5yr" value="2,300,000">
+                    <span class="input-unit">円</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="field-wrap-resale-9yr" style="display:none;">
+              <div class="field">
+                <label class="field-label">9年落ち下取り額</label>
+                <div class="field-control">
+                  <input type="range" id="slider-resale-9yr" min="0" max="3000000" step="100000" value="1000000">
+                  <div class="input-wrap">
+                    <input type="text" id="input-resale-9yr" value="1,000,000">
+                    <span class="input-unit">円</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="field-wrap-resale-10yr">
+              <div class="field">
+                <label class="field-label">10年落ち下取り額</label>
+                <div class="field-control">
+                  <input type="range" id="slider-resale-10yr" min="0" max="3000000" step="100000" value="800000">
+                  <div class="input-wrap">
+                    <input type="text" id="input-resale-10yr" value="800,000">
+                    <span class="input-unit">円</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">2台目購入価格</label>
+              <div class="field-control">
+                <input type="range" id="slider-purchase-price-2" min="1000000" max="8000000" step="100000" value="4800000">
+                <div class="input-wrap">
+                  <input type="text" id="input-purchase-price-2" value="4,800,000">
+                  <span class="input-unit">円</span>
+                </div>
+              </div>
+            </div>
+            <!-- 3台目購入価格（9yr + 15yr で表示） -->
+            <div id="field-wrap-purchase-price-3" style="display:none;">
+              <div class="field">
+                <label class="field-label">3台目購入価格</label>
+                <div class="field-control">
+                  <input type="range" id="slider-purchase-price-3" min="1000000" max="8000000" step="100000" value="4800000">
+                  <div class="input-wrap">
+                    <input type="text" id="input-purchase-price-3" value="4,800,000">
+                    <span class="input-unit">円</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- 15年落ち下取り額（15yr のみ表示） -->
+            <div id="field-wrap-resale-15yr" style="display:none;">
+              <div class="field">
+                <label class="field-label">15年落ち下取り額</label>
+                <div class="field-control">
+                  <input type="range" id="slider-resale-15yr" min="0" max="2000000" step="10000" value="300000">
+                  <div class="input-wrap">
+                    <input type="text" id="input-resale-15yr" value="300,000">
+                    <span class="input-unit">円</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 維持費セクション -->
+        <div class="input-section">
+          <div class="section-header" onclick="toggleSection(this)">
+            <h3>維持費</h3>
+            <span class="section-toggle">▼</span>
+          </div>
+          <div class="section-body">
+            <div class="field">
+              <label class="field-label">車検整備費用</label>
+              <div class="field-control">
+                <input type="range" id="slider-shaken-maintenance" min="0" max="200000" step="5000" value="50000">
+                <div class="input-wrap">
+                  <input type="text" id="input-shaken-maintenance" value="50,000">
+                  <span class="input-unit">円/回</span>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">車検法定費用</label>
+              <div class="field-control">
+                <input type="range" id="slider-shaken-legal" min="0" max="100000" step="5000" value="40000">
+                <div class="input-wrap">
+                  <input type="text" id="input-shaken-legal" value="40,000">
+                  <span class="input-unit">円/回</span>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">定期点検費用</label>
+              <div class="field-control">
+                <input type="range" id="slider-periodic-check" min="0" max="100000" step="5000" value="30000">
+                <div class="input-wrap">
+                  <input type="text" id="input-periodic-check" value="30,000">
+                  <span class="input-unit">円/年</span>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">タイヤ交換費用</label>
+              <div class="field-control">
+                <input type="range" id="slider-tire" min="0" max="300000" step="10000" value="100000">
+                <div class="input-wrap">
+                  <input type="text" id="input-tire" value="100,000">
+                  <span class="input-unit">円/回</span>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">バッテリー交換費用</label>
+              <div class="field-control">
+                <input type="range" id="slider-battery" min="0" max="100000" step="5000" value="25000">
+                <div class="input-wrap">
+                  <input type="text" id="input-battery" value="25,000">
+                  <span class="input-unit">円/回</span>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">一般整備費用</label>
+              <div class="field-control">
+                <input type="range" id="slider-general-repair" min="0" max="100000" step="5000" value="30000">
+                <div class="input-wrap">
+                  <input type="text" id="input-general-repair" value="30,000">
+                  <span class="input-unit">円/年</span>
+                </div>
+              </div>
+              <div class="field-note">※ 5年保証終了後（車齢6年目〜）に発生。5年以内の乗り替えでは不要。</div>
+            </div>
+            <div class="field">
+              <label class="field-label">自動車税年額</label>
+              <div class="field-control">
+                <input type="range" id="slider-auto-tax" min="0" max="100000" step="1000" value="36000">
+                <div class="input-wrap">
+                  <input type="text" id="input-auto-tax" value="36,000">
+                  <span class="input-unit">円/年</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- グラフエリア -->
+      <div class="chart-area">
+        <div class="chart-card">
+          <h3>累積コスト推移</h3>
+          <div class="chart-container">
+            <canvas id="line-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 年別コスト比較表 -->
+    <div class="table-section">
+      <h3>年別コスト比較表</h3>
+      <table class="cost-table">
+        <thead>
+          <tr>
+            <th>年数</th>
+            <th class="plan-a-header">10年1台 コスト</th>
+            <th class="plan-a-header">10年1台 累計</th>
+            <th class="plan-b-header">5年×2台 コスト</th>
+            <th class="plan-b-header">5年×2台 累計</th>
+            <th>年間差額</th>
+          </tr>
+        </thead>
+        <tbody id="cost-table-body">
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 印刷用 入力条件サマリー（画面では非表示） -->
+    <div class="print-params" id="print-params"></div>
+
+    <!-- 計算前提・注記（9年モード） -->
+    <div class="notes-section" id="notes-9yr" style="display:none;">
+      <h3>計算の前提条件（9年比較）</h3>
+
+      <h4>比較モデル</h4>
+      <ul>
+        <li>9年後に両プランとも「次の新車を購入した状態」で比較します。</li>
+        <li><strong>9年1台</strong>：9年目に旧車を下取りに出して新車を購入。</li>
+        <li><strong>3年×3台</strong>：3年目・6年目・9年目にそれぞれ売却し新車を購入（計4台目まで）。</li>
+      </ul>
+
+      <h4>車検スケジュール</h4>
+      <ul>
+        <li>新車の初回車検は<strong>3年目</strong>、以降<strong>2年ごと</strong>（3年→5年→7年）。</li>
+        <li>9年1台の場合、車検は<strong>計3回</strong>（3年→5年→7年、9年目の車検前に乗り替え）。</li>
+        <li>3年で乗り替える場合、初回車検（3年目）の前に売却するため<strong>車検費用なし</strong>。</li>
+      </ul>
+
+      <h4>消耗品の交換サイクル</h4>
+      <ul>
+        <li><strong>タイヤ</strong>：5年目に交換。9年1台の場合は1回。3年で乗り替える場合は交換不要。</li>
+        <li><strong>バッテリー</strong>：3年ごとに交換。9年1台の場合は3年目・6年目の計2回。3年で乗り替える場合は交換不要（3年ごと交換だが売却前）。</li>
+      </ul>
+
+      <h4>一般整備費（保証期間外の修理）</h4>
+      <ul>
+        <li>新車の5年保証が切れた<strong>6年目以降</strong>、毎年一般整備費が発生する想定。</li>
+        <li>9年1台の場合、6年目〜8年目の<strong>計3年間</strong>一般整備費が発生。</li>
+        <li>3年で乗り替えるプランでは、常に保証期間内のため<strong>一般整備費はかからない</strong>想定。</li>
+      </ul>
+
+      <h4>計算に含まれるもの</h4>
+      <ul>
+        <li>車両購入費 / 下取り・売却額 / 車検（整備＋法定費用） / 定期点検</li>
+        <li>タイヤ交換 / バッテリー交換 / 一般整備（保証切れ後） / 自動車税</li>
+      </ul>
+
+      <h4>計算に含まれないもの</h4>
+      <ul>
+        <li>任意保険料 / 燃料費 / 駐車場代 / 高速料金 / ローン金利</li>
+        <li>これらは計算外としてます。</li>
+      </ul>
+    </div>
+
+    <!-- 計算前提・注記（10年モード） -->
+    <div class="notes-section" id="notes-10yr">
+      <h3>計算の前提条件（10年比較）</h3>
+
+      <h4>比較モデル</h4>
+      <ul>
+        <li>10年後に両プランとも「次の新車を購入した状態」で比較します。</li>
+        <li><strong>10年1台</strong>：10年目に旧車を下取りに出して新車を購入。</li>
+        <li><strong>5年×2台</strong>：5年目・10年目にそれぞれ売却し新車を購入（計3台目まで）。</li>
+      </ul>
+
+      <h4>車検スケジュール</h4>
+      <ul>
+        <li>新車の初回車検は<strong>3年目</strong>、以降<strong>2年ごと</strong>（3年→5年→7年→9年）。</li>
+        <li>5年で乗り替える場合、車検は<strong>3年目の1回のみ</strong>（5年目の車検前に売却）。</li>
+      </ul>
+
+      <h4>消耗品の交換サイクル</h4>
+      <ul>
+        <li><strong>タイヤ</strong>：5年目に交換。5年で乗り替える場合は交換不要とする。</li>
+        <li><strong>バッテリー</strong>：3年ごとに交換。</li>
+      </ul>
+
+      <h4>一般整備費（保証期間外の修理）</h4>
+      <ul>
+        <li>新車の5年保証が切れた<strong>6年目以降</strong>、毎年一般整備費が発生する想定。</li>
+        <li>5年以内に乗り替えるプランでは、常に保証期間内のため一般整備費はかからない想定。</li>
+      </ul>
+
+      <h4>計算に含まれるもの</h4>
+      <ul>
+        <li>車両購入費 / 下取り・売却額 / 車検（整備＋法定費用） / 定期点検</li>
+        <li>タイヤ交換 / バッテリー交換 / 一般整備（保証切れ後） / 自動車税</li>
+      </ul>
+
+      <h4>計算に含まれないもの</h4>
+      <ul>
+        <li>任意保険料 / 燃料費 / 駐車場代 / 高速料金 / ローン金利</li>
+        <li>これらは計算外としてます。</li>
+      </ul>
+    </div>
+
+    <!-- 計算前提・注記（15年モード） -->
+    <div class="notes-section" id="notes-15yr" style="display:none;">
+      <h3>計算の前提条件（15年比較）</h3>
+
+      <h4>比較モデル</h4>
+      <ul>
+        <li>15年後に両プランとも「次の新車を購入した状態」で比較します。</li>
+        <li><strong>15年1台</strong>：15年目に旧車を下取りに出して新車を購入。</li>
+        <li><strong>5年×3台</strong>：5年目・10年目・15年目にそれぞれ売却し新車を購入（計4台目まで）。</li>
+      </ul>
+
+      <h4>車検スケジュール</h4>
+      <ul>
+        <li>新車の初回車検は<strong>3年目</strong>、以降<strong>2年ごと</strong>。</li>
+        <li>15年1台の場合、車検は<strong>計6回</strong>（3年→5年→7年→9年→11年→13年）。</li>
+        <li>5年で乗り替える場合、各車の車検は<strong>3年目の1回のみ</strong>。</li>
+      </ul>
+
+      <h4>消耗品の交換サイクル</h4>
+      <ul>
+        <li><strong>タイヤ</strong>：5年ごとに交換。15年1台の場合は5年目・10年目の計2回。5年で乗り替える場合は交換不要。</li>
+        <li><strong>バッテリー</strong>：3年ごとに交換。15年1台の場合は3年目・6年目・9年目・12年目の計4回。</li>
+      </ul>
+
+      <h4>一般整備費（保証期間外の修理）</h4>
+      <ul>
+        <li>新車の5年保証が切れた<strong>6年目以降</strong>、毎年一般整備費が発生する想定。</li>
+        <li>15年1台の場合、6年目〜14年目の<strong>計9年間</strong>一般整備費が発生。</li>
+        <li>5年以内に乗り替えるプランでは、常に保証期間内のため一般整備費はかからない想定。</li>
+      </ul>
+
+      <h4>計算に含まれるもの</h4>
+      <ul>
+        <li>車両購入費 / 下取り・売却額 / 車検（整備＋法定費用） / 定期点検</li>
+        <li>タイヤ交換 / バッテリー交換 / 一般整備（保証切れ後） / 自動車税</li>
+      </ul>
+
+      <h4>計算に含まれないもの</h4>
+      <ul>
+        <li>任意保険料 / 燃料費 / 駐車場代 / 高速料金 / ローン金利</li>
+        <li>これらは計算外としてます。</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    代替え期間比較シミュレーター &copy; 2025
+  </div>
+
+  <script>
+    // ===== ユーティリティ =====
+    function formatNumber(num) {
+      return Math.round(num).toLocaleString('ja-JP');
+    }
+
+    function parseNumber(str) {
+      return parseInt(str.replace(/,/g, ''), 10);
+    }
+
+    function clamp(val, min, max) {
+      return Math.max(min, Math.min(max, val));
+    }
+
+    // ===== 入力フィールド定義 =====
+    const fields = [
+      { id: 'purchase-price' },
+      { id: 'resale-3yr' },
+      { id: 'resale-5yr' },
+      { id: 'resale-9yr' },
+      { id: 'resale-10yr' },
+      { id: 'purchase-price-2' },
+      { id: 'shaken-maintenance' },
+      { id: 'shaken-legal' },
+      { id: 'periodic-check' },
+      { id: 'tire' },
+      { id: 'battery' },
+      { id: 'general-repair' },
+      { id: 'auto-tax' },
+      { id: 'purchase-price-3' },
+      { id: 'resale-15yr' },
+    ];
+
+    // ===== 双方向バインディング =====
+    fields.forEach(f => {
+      const slider = document.getElementById('slider-' + f.id);
+      const input = document.getElementById('input-' + f.id);
+
+      slider.addEventListener('input', () => {
+        input.value = formatNumber(slider.value);
+        calculate();
+      });
+
+      input.addEventListener('change', () => {
+        const val = parseNumber(input.value);
+        if (!isNaN(val)) {
+          slider.value = clamp(val, parseInt(slider.min), parseInt(slider.max));
+          // スライダーのステップスナップ後の実際の値を読み戻す
+          input.value = formatNumber(parseInt(slider.value));
+          calculate();
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      });
+    });
+
+    // ===== セクション折りたたみ =====
+    function toggleSection(headerEl) {
+      const body = headerEl.nextElementSibling;
+      const toggle = headerEl.querySelector('.section-toggle');
+      body.classList.toggle('collapsed');
+      toggle.classList.toggle('collapsed');
+    }
+
+    // ===== モード切替 =====
+    let currentMode = '10yr';
+
+    function switchMode(mode) {
+      currentMode = mode;
+
+      // タブ active 切替
+      document.getElementById('tab-9yr').classList.toggle('active', mode === '9yr');
+      document.getElementById('tab-10yr').classList.toggle('active', mode === '10yr');
+      document.getElementById('tab-15yr').classList.toggle('active', mode === '15yr');
+
+      // フィールド表示制御
+      document.getElementById('field-wrap-resale-3yr').style.display = (mode === '9yr') ? '' : 'none';
+      document.getElementById('field-wrap-resale-5yr').style.display = (mode !== '9yr') ? '' : 'none';
+      document.getElementById('field-wrap-resale-9yr').style.display = (mode === '9yr') ? '' : 'none';
+      document.getElementById('field-wrap-resale-10yr').style.display = (mode === '10yr') ? '' : 'none';
+      document.getElementById('field-wrap-purchase-price-3').style.display = (mode !== '10yr') ? '' : 'none';
+      document.getElementById('field-wrap-resale-15yr').style.display = (mode === '15yr') ? '' : 'none';
+
+      // チャートを破棄して再作成に備える
+      if (lineChart) { lineChart.destroy(); lineChart = null; }
+
+      // ヘッダーサブタイトル更新
+      const subtitles = {
+        '9yr': '9年1台 vs 3年×3台 ─ 乗り替えサイクルの総コスト比較',
+        '10yr': '10年1台 vs 5年×2台 ─ 乗り替えサイクルの総コスト比較',
+        '15yr': '15年1台 vs 5年×3台 ─ 乗り替えサイクルの総コスト比較',
+      };
+      document.getElementById('header-subtitle').textContent = subtitles[mode];
+
+      // 注記セクション切替
+      document.getElementById('notes-9yr').style.display = mode === '9yr' ? 'block' : 'none';
+      document.getElementById('notes-10yr').style.display = mode === '10yr' ? 'block' : 'none';
+      document.getElementById('notes-15yr').style.display = mode === '15yr' ? 'block' : 'none';
+
+      // 再計算
+      calculate();
+    }
+
+    // ===== 入力値取得 =====
+    function getVal(id) {
+      return parseInt(document.getElementById('slider-' + id).value);
+    }
+
+    // ===== 計算ロジック =====
+    function calculate() {
+      if (currentMode === '15yr') {
+        calculate15();
+      } else if (currentMode === '9yr') {
+        calculate9();
+      } else {
+        calculate10();
+      }
+    }
+
+    function calculate10() {
+      // 10年モード用のKPIラベル復元
+      document.querySelector('.kpi-card.plan-a .kpi-label').textContent = '10年1台 乗り続け';
+      document.querySelector('.kpi-card.plan-a .kpi-sublabel').textContent = '10年間の総コスト';
+      document.querySelector('.kpi-card.plan-b .kpi-label').textContent = '5年×2台 乗り替え';
+      document.querySelector('.kpi-card.plan-b .kpi-sublabel').textContent = '10年間の総コスト';
+      // テーブルヘッダー復元
+      const ths = document.querySelectorAll('.cost-table thead th');
+      ths[1].textContent = '10年1台 コスト';
+      ths[2].textContent = '10年1台 累計';
+      ths[3].textContent = '5年×2台 コスト';
+      ths[4].textContent = '5年×2台 累計';
+
+      const purchasePrice = getVal('purchase-price');
+      const resale5yr = getVal('resale-5yr');
+      const resale10yr = getVal('resale-10yr');
+      const purchasePrice2 = getVal('purchase-price-2');
+      const shakenMaint = getVal('shaken-maintenance');
+      const shakenLegal = getVal('shaken-legal');
+      const periodicCheck = getVal('periodic-check');
+      const tire = getVal('tire');
+      const battery = getVal('battery');
+      const generalRepair = getVal('general-repair');
+      const autoTax = getVal('auto-tax');
+
+      const shakenTotal = shakenMaint + shakenLegal;
+
+      // パターンA: 10年1台乗り続け
+      const costA = [];
+      costA[0] = purchasePrice;                                              // 年0: 購入
+      costA[1] = periodicCheck + autoTax;                                    // 年1
+      costA[2] = periodicCheck + autoTax;                                    // 年2
+      costA[3] = shakenTotal + battery + autoTax;                            // 年3: 初回車検+バッテリー
+      costA[4] = periodicCheck + autoTax;                                    // 年4
+      costA[5] = shakenTotal + tire + autoTax;                               // 年5: 車検+タイヤ
+      costA[6] = generalRepair + battery + autoTax + periodicCheck;          // 年6: 一般整備開始
+      costA[7] = shakenTotal + generalRepair + autoTax;                      // 年7: 車検+一般整備
+      costA[8] = periodicCheck + generalRepair + autoTax;                    // 年8
+      costA[9] = shakenTotal + generalRepair + autoTax;                      // 年9: 車検+一般整備
+      costA[10] = purchasePrice - resale10yr;                                 // 年10: 次の新車購入（下取り差引）
+
+      // パターンB: 5年×2台乗り替え
+      const costB = [];
+      costB[0] = purchasePrice;                                              // 年0: 1台目購入
+      costB[1] = periodicCheck + autoTax;                                    // 年1
+      costB[2] = periodicCheck + autoTax;                                    // 年2
+      costB[3] = shakenTotal + battery + autoTax;                            // 年3: 車検+バッテリー
+      costB[4] = periodicCheck + autoTax;                                    // 年4
+      costB[5] = -resale5yr + purchasePrice2;                                // 年5: 売却+2台目購入
+      costB[6] = periodicCheck + autoTax;                                    // 年6: 2台目1年目
+      costB[7] = periodicCheck + autoTax;                                    // 年7: 2台目2年目
+      costB[8] = shakenTotal + battery + autoTax;                            // 年8: 2台目車検+バッテリー
+      costB[9] = periodicCheck + autoTax;                                    // 年9: 2台目4年目
+      costB[10] = -resale5yr + purchasePrice2;                               // 年10: 2台目売却+3台目購入
+
+      // 累計計算
+      const cumA = [costA[0]];
+      const cumB = [costB[0]];
+      for (let i = 1; i <= 10; i++) {
+        cumA[i] = cumA[i - 1] + costA[i];
+        cumB[i] = cumB[i - 1] + costB[i];
+      }
+
+      const totalA = cumA[10];
+      const totalB = cumB[10];
+      const diff = totalA - totalB; // 正=Bがお得, 負=Aがお得
+
+      // ===== KPIカード更新 =====
+      document.getElementById('kpi-total-a').textContent = '¥' + formatNumber(totalA);
+      document.getElementById('kpi-annual-a').textContent = '年間平均 ¥' + formatNumber(totalA / 10);
+      document.getElementById('kpi-total-b').textContent = '¥' + formatNumber(totalB);
+      document.getElementById('kpi-annual-b').textContent = '年間平均 ¥' + formatNumber(totalB / 10);
+
+      const diffCard = document.getElementById('kpi-diff-card');
+      const diffLabel = document.getElementById('kpi-diff-label');
+      const diffSublabel = document.getElementById('kpi-diff-sublabel');
+      const diffValue = document.getElementById('kpi-diff-value');
+      const diffAnnual = document.getElementById('kpi-diff-annual');
+      const diffBadge = document.getElementById('kpi-diff-badge');
+
+      const absDiff = Math.abs(diff);
+      diffValue.textContent = '¥' + formatNumber(absDiff);
+      diffAnnual.textContent = '年間 ¥' + formatNumber(absDiff / 10) + ' の差';
+
+      if (diff > 0) {
+        // 5年×2台の方がお得
+        diffCard.className = 'kpi-card saving';
+        diffLabel.textContent = '差額';
+        diffSublabel.textContent = '5年×2台の方がお得';
+        diffBadge.textContent = '5年×2台がお得';
+      } else if (diff < 0) {
+        // 10年1台の方がお得
+        diffCard.className = 'kpi-card loss';
+        diffLabel.textContent = '差額';
+        diffSublabel.textContent = '10年1台の方がお得';
+        diffBadge.textContent = '10年1台がお得';
+      } else {
+        diffCard.className = 'kpi-card saving';
+        diffLabel.textContent = '差額';
+        diffSublabel.textContent = '同額';
+        diffBadge.textContent = '同額';
+      }
+
+      // ===== 年別比較表更新 =====
+      updateTable(costA, costB, cumA, cumB, totalA, totalB, {
+        purchasePrice, resale5yr, resale10yr, purchasePrice2,
+        shakenMaint, shakenLegal, periodicCheck, tire, battery, generalRepair, autoTax
+      });
+
+      // ===== グラフ更新 =====
+      updateLineChart(cumA, cumB);
+    }
+
+    // ===== 年別比較表 =====
+
+    // 内訳の短縮フォーマット（万円単位）
+    function shortYen(val) {
+      if (val === 0) return '0';
+      if (val % 10000 === 0) return (val / 10000) + '万';
+      return (val / 10000).toFixed(1) + '万';
+    }
+
+    // 内訳項目リストから表示テキストを生成
+    function buildBreakdown(items) {
+      const parts = items.filter(it => it[1] !== 0).map(it => it[0] + ' ' + shortYen(it[1]));
+      return parts.join(' / ');
+    }
+
+    function updateTable(costA, costB, cumA, cumB, totalA, totalB, p) {
+      const tbody = document.getElementById('cost-table-body');
+
+      // パターンA 内訳定義: [項目名, 金額] の配列
+      const bdA = [];
+      bdA[0]  = [['購入', p.purchasePrice]];
+      bdA[1]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[2]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[3]  = [['車検', p.shakenMaint + p.shakenLegal], ['バッテリー', p.battery], ['税', p.autoTax]];
+      bdA[4]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[5]  = [['車検', p.shakenMaint + p.shakenLegal], ['タイヤ', p.tire], ['税', p.autoTax]];
+      bdA[6]  = [['一般整備', p.generalRepair], ['バッテリー', p.battery], ['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[7]  = [['車検', p.shakenMaint + p.shakenLegal], ['一般整備', p.generalRepair], ['税', p.autoTax]];
+      bdA[8]  = [['点検', p.periodicCheck], ['一般整備', p.generalRepair], ['税', p.autoTax]];
+      bdA[9]  = [['車検', p.shakenMaint + p.shakenLegal], ['一般整備', p.generalRepair], ['税', p.autoTax]];
+      bdA[10] = [['購入', p.purchasePrice], ['下取り', -p.resale10yr]];
+
+      // パターンB 内訳定義
+      const bdB = [];
+      bdB[0]  = [['購入', p.purchasePrice]];
+      bdB[1]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[2]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[3]  = [['車検', p.shakenMaint + p.shakenLegal], ['バッテリー', p.battery], ['税', p.autoTax]];
+      bdB[4]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[5]  = [['売却', -p.resale5yr], ['購入', p.purchasePrice2]];
+      bdB[6]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[7]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[8]  = [['車検', p.shakenMaint + p.shakenLegal], ['バッテリー', p.battery], ['税', p.autoTax]];
+      bdB[9]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[10] = [['売却', -p.resale5yr], ['購入', p.purchasePrice2]];
+
+      function formatCost(val) {
+        if (val >= 0) return '¥' + formatNumber(val);
+        return '-¥' + formatNumber(Math.abs(val));
+      }
+
+      let html = '';
+      for (let i = 0; i <= 10; i++) {
+        const yearDiff = costA[i] - costB[i];
+        const diffClass = yearDiff > 0 ? 'diff-positive' : yearDiff < 0 ? 'diff-negative' : '';
+
+        let rowClass = '';
+        if (i === 0 || i === 5 || i === 10) rowClass = 'highlight-purchase';
+
+        const breakdownA = buildBreakdown(bdA[i]);
+        const breakdownB = buildBreakdown(bdB[i]);
+
+        html += `<tr class="${rowClass}">
+          <td>${i}年目</td>
+          <td>${formatCost(costA[i])}<span class="cost-breakdown">${breakdownA}</span></td>
+          <td>¥${formatNumber(cumA[i])}</td>
+          <td>${formatCost(costB[i])}<span class="cost-breakdown">${breakdownB}</span></td>
+          <td>¥${formatNumber(cumB[i])}</td>
+          <td class="${diffClass}">${formatCost(yearDiff)}</td>
+        </tr>`;
+      }
+
+      // 合計行
+      const totalDiff = totalA - totalB;
+      const totalDiffClass = totalDiff > 0 ? 'diff-positive' : totalDiff < 0 ? 'diff-negative' : '';
+      html += `<tr class="row-total">
+        <td>合計</td>
+        <td colspan="2">¥${formatNumber(totalA)}</td>
+        <td colspan="2">¥${formatNumber(totalB)}</td>
+        <td class="${totalDiffClass}">${formatCost(totalDiff)}</td>
+      </tr>`;
+
+      tbody.innerHTML = html;
+    }
+
+    // ===== 累積コスト推移グラフ =====
+    let lineChart = null;
+
+    function updateLineChart(cumA, cumB) {
+      const ctx = document.getElementById('line-chart').getContext('2d');
+      const labels = Array.from({ length: 11 }, (_, i) => i + '年');
+
+      if (lineChart) {
+        lineChart.data.datasets[0].data = cumA;
+        lineChart.data.datasets[1].data = cumB;
+        lineChart.update();
+        return;
+      }
+
+      lineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '10年1台',
+              data: cumA,
+              borderColor: '#2d6a8a',
+              backgroundColor: 'rgba(45,106,138,0.08)',
+              fill: false,
+              tension: 0.1,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              borderWidth: 2.5,
+            },
+            {
+              label: '5年×2台',
+              data: cumB,
+              borderColor: '#8a4a2d',
+              backgroundColor: 'rgba(138,74,45,0.08)',
+              fill: false,
+              tension: 0.1,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              borderWidth: 2.5,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                font: { family: "'Noto Sans JP', sans-serif", size: 12 },
+                usePointStyle: true,
+                padding: 16,
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': ¥' + formatNumber(context.raw);
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: {
+                font: { family: "'Noto Sans JP', sans-serif", size: 11 }
+              }
+            },
+            y: {
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: {
+                font: { family: "'Noto Sans JP', sans-serif", size: 11 },
+                callback: function(val) {
+                  if (val >= 10000) return '¥' + (val / 10000).toFixed(0) + '万';
+                  return '¥' + formatNumber(val);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ===== 15年モード 計算ロジック =====
+    function calculate15() {
+      const purchasePrice = getVal('purchase-price');
+      const resale5yr = getVal('resale-5yr');
+      const resale15yr = getVal('resale-15yr');
+      const purchasePrice2 = getVal('purchase-price-2');
+      const purchasePrice3 = getVal('purchase-price-3');
+      const shakenMaint = getVal('shaken-maintenance');
+      const shakenLegal = getVal('shaken-legal');
+      const periodicCheck = getVal('periodic-check');
+      const tire = getVal('tire');
+      const battery = getVal('battery');
+      const generalRepair = getVal('general-repair');
+      const autoTax = getVal('auto-tax');
+
+      const shakenTotal = shakenMaint + shakenLegal;
+
+      // パターンA: 15年1台乗り続け
+      const costA = [];
+      costA[0]  = purchasePrice;                                              // 年0: 購入
+      costA[1]  = periodicCheck + autoTax;                                    // 年1: 点検+税
+      costA[2]  = periodicCheck + autoTax;                                    // 年2: 点検+税
+      costA[3]  = shakenTotal + battery + autoTax;                            // 年3: 初回車検+バッテリー
+      costA[4]  = periodicCheck + autoTax;                                    // 年4: 点検+税
+      costA[5]  = shakenTotal + tire + autoTax;                               // 年5: 車検+タイヤ1回目
+      costA[6]  = generalRepair + battery + periodicCheck + autoTax;          // 年6: 保証切れ
+      costA[7]  = shakenTotal + generalRepair + autoTax;                      // 年7: 車検+一般整備
+      costA[8]  = periodicCheck + generalRepair + autoTax;                    // 年8: 点検+一般整備
+      costA[9]  = shakenTotal + generalRepair + battery + autoTax;            // 年9: 車検+一般整備+バッテリー
+      costA[10] = tire + periodicCheck + generalRepair + autoTax;             // 年10: タイヤ2回目+点検+一般整備
+      costA[11] = shakenTotal + generalRepair + autoTax;                      // 年11: 車検+一般整備
+      costA[12] = generalRepair + battery + periodicCheck + autoTax;          // 年12: 一般整備+バッテリー+点検
+      costA[13] = shakenTotal + generalRepair + autoTax;                      // 年13: 車検+一般整備
+      costA[14] = periodicCheck + generalRepair + autoTax;                    // 年14: 点検+一般整備
+      costA[15] = purchasePrice - resale15yr;                                 // 年15: 次の新車購入（15年落ち下取り差引）
+
+      // パターンB: 5年×3台乗り替え
+      const costB = [];
+      // 1台目
+      costB[0]  = purchasePrice;                                              // 年0: 1台目購入
+      costB[1]  = periodicCheck + autoTax;                                    // 年1
+      costB[2]  = periodicCheck + autoTax;                                    // 年2
+      costB[3]  = shakenTotal + battery + autoTax;                            // 年3: 車検+バッテリー
+      costB[4]  = periodicCheck + autoTax;                                    // 年4
+      costB[5]  = -resale5yr + purchasePrice2;                                // 年5: 売却+2台目購入
+      // 2台目
+      costB[6]  = periodicCheck + autoTax;                                    // 年6: 2台目1年目
+      costB[7]  = periodicCheck + autoTax;                                    // 年7
+      costB[8]  = shakenTotal + battery + autoTax;                            // 年8: 2台目車検+バッテリー
+      costB[9]  = periodicCheck + autoTax;                                    // 年9
+      costB[10] = -resale5yr + purchasePrice3;                                // 年10: 売却+3台目購入
+      // 3台目
+      costB[11] = periodicCheck + autoTax;                                    // 年11: 3台目1年目
+      costB[12] = periodicCheck + autoTax;                                    // 年12
+      costB[13] = shakenTotal + battery + autoTax;                            // 年13: 3台目車検+バッテリー
+      costB[14] = periodicCheck + autoTax;                                    // 年14
+      costB[15] = -resale5yr + purchasePrice3;                                // 年15: 売却+4台目購入
+
+      // 累計計算
+      const cumA = [costA[0]];
+      const cumB = [costB[0]];
+      for (let i = 1; i <= 15; i++) {
+        cumA[i] = cumA[i - 1] + costA[i];
+        cumB[i] = cumB[i - 1] + costB[i];
+      }
+
+      const totalA = cumA[15];
+      const totalB = cumB[15];
+      const diff = totalA - totalB;
+
+      // ===== KPIカード更新（15年用ラベル） =====
+      document.querySelector('.kpi-card.plan-a .kpi-label').textContent = '15年1台 乗り続け';
+      document.querySelector('.kpi-card.plan-a .kpi-sublabel').textContent = '15年間の総コスト';
+      document.querySelector('.kpi-card.plan-b .kpi-label').textContent = '5年×3台 乗り替え';
+      document.querySelector('.kpi-card.plan-b .kpi-sublabel').textContent = '15年間の総コスト';
+
+      document.getElementById('kpi-total-a').textContent = '¥' + formatNumber(totalA);
+      document.getElementById('kpi-annual-a').textContent = '年間平均 ¥' + formatNumber(totalA / 15);
+      document.getElementById('kpi-total-b').textContent = '¥' + formatNumber(totalB);
+      document.getElementById('kpi-annual-b').textContent = '年間平均 ¥' + formatNumber(totalB / 15);
+
+      const diffCard = document.getElementById('kpi-diff-card');
+      const diffLabel = document.getElementById('kpi-diff-label');
+      const diffSublabel = document.getElementById('kpi-diff-sublabel');
+      const diffValue = document.getElementById('kpi-diff-value');
+      const diffAnnual = document.getElementById('kpi-diff-annual');
+      const diffBadge = document.getElementById('kpi-diff-badge');
+
+      const absDiff = Math.abs(diff);
+      diffValue.textContent = '¥' + formatNumber(absDiff);
+      diffAnnual.textContent = '年間 ¥' + formatNumber(absDiff / 15) + ' の差';
+
+      if (diff > 0) {
+        diffCard.className = 'kpi-card saving';
+        diffLabel.textContent = '差額';
+        diffSublabel.textContent = '5年×3台の方がお得';
+        diffBadge.textContent = '5年×3台がお得';
+      } else if (diff < 0) {
+        diffCard.className = 'kpi-card loss';
+        diffLabel.textContent = '差額';
+        diffSublabel.textContent = '15年1台の方がお得';
+        diffBadge.textContent = '15年1台がお得';
+      } else {
+        diffCard.className = 'kpi-card saving';
+        diffLabel.textContent = '差額';
+        diffSublabel.textContent = '同額';
+        diffBadge.textContent = '同額';
+      }
+
+      // テーブルヘッダー更新
+      const ths = document.querySelectorAll('.cost-table thead th');
+      ths[1].textContent = '15年1台 コスト';
+      ths[2].textContent = '15年1台 累計';
+      ths[3].textContent = '5年×3台 コスト';
+      ths[4].textContent = '5年×3台 累計';
+
+      // ===== 年別比較表更新 =====
+      updateTable15(costA, costB, cumA, cumB, totalA, totalB, {
+        purchasePrice, resale5yr, resale15yr, purchasePrice2, purchasePrice3,
+        shakenMaint, shakenLegal, periodicCheck, tire, battery, generalRepair, autoTax
+      });
+
+      // ===== グラフ更新 =====
+      updateLineChart15(cumA, cumB);
+    }
+
+    // ===== 15年 年別比較表 =====
+    function updateTable15(costA, costB, cumA, cumB, totalA, totalB, p) {
+      const tbody = document.getElementById('cost-table-body');
+      const shakenTotal = p.shakenMaint + p.shakenLegal;
+
+      // パターンA 内訳定義
+      const bdA = [];
+      bdA[0]  = [['購入', p.purchasePrice]];
+      bdA[1]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[2]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[3]  = [['車検', shakenTotal], ['バッテリー', p.battery], ['税', p.autoTax]];
+      bdA[4]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[5]  = [['車検', shakenTotal], ['タイヤ', p.tire], ['税', p.autoTax]];
+      bdA[6]  = [['一般整備', p.generalRepair], ['バッテリー', p.battery], ['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[7]  = [['車検', shakenTotal], ['一般整備', p.generalRepair], ['税', p.autoTax]];
+      bdA[8]  = [['点検', p.periodicCheck], ['一般整備', p.generalRepair], ['税', p.autoTax]];
+      bdA[9]  = [['車検', shakenTotal], ['一般整備', p.generalRepair], ['バッテリー', p.battery], ['税', p.autoTax]];
+      bdA[10] = [['タイヤ', p.tire], ['点検', p.periodicCheck], ['一般整備', p.generalRepair], ['税', p.autoTax]];
+      bdA[11] = [['車検', shakenTotal], ['一般整備', p.generalRepair], ['税', p.autoTax]];
+      bdA[12] = [['一般整備', p.generalRepair], ['バッテリー', p.battery], ['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[13] = [['車検', shakenTotal], ['一般整備', p.generalRepair], ['税', p.autoTax]];
+      bdA[14] = [['点検', p.periodicCheck], ['一般整備', p.generalRepair], ['税', p.autoTax]];
+      bdA[15] = [['購入', p.purchasePrice], ['下取り', -p.resale15yr]];
+
+      // パターンB 内訳定義
+      const bdB = [];
+      // 1台目
+      bdB[0]  = [['購入', p.purchasePrice]];
+      bdB[1]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[2]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[3]  = [['車検', shakenTotal], ['バッテリー', p.battery], ['税', p.autoTax]];
+      bdB[4]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[5]  = [['売却', -p.resale5yr], ['購入', p.purchasePrice2]];
+      // 2台目
+      bdB[6]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[7]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[8]  = [['車検', shakenTotal], ['バッテリー', p.battery], ['税', p.autoTax]];
+      bdB[9]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[10] = [['売却', -p.resale5yr], ['購入', p.purchasePrice3]];
+      // 3台目
+      bdB[11] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[12] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[13] = [['車検', shakenTotal], ['バッテリー', p.battery], ['税', p.autoTax]];
+      bdB[14] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[15] = [['売却', -p.resale5yr], ['購入', p.purchasePrice3]];
+
+      function formatCost(val) {
+        if (val >= 0) return '¥' + formatNumber(val);
+        return '-¥' + formatNumber(Math.abs(val));
+      }
+
+      let html = '';
+      for (let i = 0; i <= 15; i++) {
+        const yearDiff = costA[i] - costB[i];
+        const diffClass = yearDiff > 0 ? 'diff-positive' : yearDiff < 0 ? 'diff-negative' : '';
+
+        let rowClass = '';
+        if (i === 0 || i === 5 || i === 10 || i === 15) rowClass = 'highlight-purchase';
+
+        const breakdownA = buildBreakdown(bdA[i]);
+        const breakdownB = buildBreakdown(bdB[i]);
+
+        html += `<tr class="${rowClass}">
+          <td>${i}年目</td>
+          <td>${formatCost(costA[i])}<span class="cost-breakdown">${breakdownA}</span></td>
+          <td>¥${formatNumber(cumA[i])}</td>
+          <td>${formatCost(costB[i])}<span class="cost-breakdown">${breakdownB}</span></td>
+          <td>¥${formatNumber(cumB[i])}</td>
+          <td class="${diffClass}">${formatCost(yearDiff)}</td>
+        </tr>`;
+      }
+
+      // 合計行
+      const totalDiff = totalA - totalB;
+      const totalDiffClass = totalDiff > 0 ? 'diff-positive' : totalDiff < 0 ? 'diff-negative' : '';
+      html += `<tr class="row-total">
+        <td>合計</td>
+        <td colspan="2">¥${formatNumber(totalA)}</td>
+        <td colspan="2">¥${formatNumber(totalB)}</td>
+        <td class="${totalDiffClass}">${formatCost(totalDiff)}</td>
+      </tr>`;
+
+      tbody.innerHTML = html;
+    }
+
+    // ===== 15年 累積コスト推移グラフ =====
+    function updateLineChart15(cumA, cumB) {
+      const ctx = document.getElementById('line-chart').getContext('2d');
+      const labels = Array.from({ length: 16 }, (_, i) => i + '年');
+
+      if (lineChart) {
+        lineChart.data.labels = labels;
+        lineChart.data.datasets[0].data = cumA;
+        lineChart.data.datasets[1].data = cumB;
+        lineChart.update();
+        return;
+      }
+
+      lineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '15年1台',
+              data: cumA,
+              borderColor: '#2d6a8a',
+              backgroundColor: 'rgba(45,106,138,0.08)',
+              fill: false,
+              tension: 0.1,
+              pointRadius: 3,
+              pointHoverRadius: 5,
+              borderWidth: 2.5,
+            },
+            {
+              label: '5年×3台',
+              data: cumB,
+              borderColor: '#8a4a2d',
+              backgroundColor: 'rgba(138,74,45,0.08)',
+              fill: false,
+              tension: 0.1,
+              pointRadius: 3,
+              pointHoverRadius: 5,
+              borderWidth: 2.5,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                font: { family: "'Noto Sans JP', sans-serif", size: 12 },
+                usePointStyle: true,
+                padding: 16,
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': ¥' + formatNumber(context.raw);
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: {
+                font: { family: "'Noto Sans JP', sans-serif", size: 11 }
+              }
+            },
+            y: {
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: {
+                font: { family: "'Noto Sans JP', sans-serif", size: 11 },
+                callback: function(val) {
+                  if (val >= 10000) return '¥' + (val / 10000).toFixed(0) + '万';
+                  return '¥' + formatNumber(val);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ===== 9年モード 計算ロジック =====
+    function calculate9() {
+      const purchasePrice = getVal('purchase-price');
+      const resale3yr = getVal('resale-3yr');
+      const resale9yr = getVal('resale-9yr');
+      const purchasePrice2 = getVal('purchase-price-2');
+      const purchasePrice3 = getVal('purchase-price-3');
+      const shakenMaint = getVal('shaken-maintenance');
+      const shakenLegal = getVal('shaken-legal');
+      const periodicCheck = getVal('periodic-check');
+      const tire = getVal('tire');
+      const battery = getVal('battery');
+      const generalRepair = getVal('general-repair');
+      const autoTax = getVal('auto-tax');
+
+      const shakenTotal = shakenMaint + shakenLegal;
+
+      // パターンA: 9年1台乗り続け
+      const costA = [];
+      costA[0] = purchasePrice;                                              // 年0: 購入
+      costA[1] = periodicCheck + autoTax;                                    // 年1: 点検+税
+      costA[2] = periodicCheck + autoTax;                                    // 年2: 点検+税
+      costA[3] = shakenTotal + battery + autoTax;                            // 年3: 初回車検+バッテリー
+      costA[4] = periodicCheck + autoTax;                                    // 年4: 点検+税
+      costA[5] = shakenTotal + tire + autoTax;                               // 年5: 車検+タイヤ
+      costA[6] = generalRepair + battery + periodicCheck + autoTax;          // 年6: 一般整備+バッテリー+点検（保証切れ）
+      costA[7] = shakenTotal + generalRepair + autoTax;                      // 年7: 車検+一般整備
+      costA[8] = periodicCheck + generalRepair + autoTax;                    // 年8: 点検+一般整備
+      costA[9] = purchasePrice - resale9yr;                                  // 年9: 次の新車購入（9年落ち下取り差引）
+
+      // パターンB: 3年×3台乗り替え
+      const costB = [];
+      // 1台目
+      costB[0] = purchasePrice;                                              // 年0: 1台目購入
+      costB[1] = periodicCheck + autoTax;                                    // 年1: 点検+税
+      costB[2] = periodicCheck + autoTax;                                    // 年2: 点検+税
+      costB[3] = -resale3yr + purchasePrice2;                                // 年3: 1台目売却+2台目購入
+      // 2台目
+      costB[4] = periodicCheck + autoTax;                                    // 年4: 点検+税
+      costB[5] = periodicCheck + autoTax;                                    // 年5: 点検+税
+      costB[6] = -resale3yr + purchasePrice3;                                // 年6: 2台目売却+3台目購入
+      // 3台目
+      costB[7] = periodicCheck + autoTax;                                    // 年7: 点検+税
+      costB[8] = periodicCheck + autoTax;                                    // 年8: 点検+税
+      costB[9] = -resale3yr + purchasePrice3;                                // 年9: 3台目売却+4台目購入
+
+      // 累計計算
+      const cumA = [costA[0]];
+      const cumB = [costB[0]];
+      for (let i = 1; i <= 9; i++) {
+        cumA[i] = cumA[i - 1] + costA[i];
+        cumB[i] = cumB[i - 1] + costB[i];
+      }
+
+      const totalA = cumA[9];
+      const totalB = cumB[9];
+      const diff = totalA - totalB;
+
+      // ===== KPIカード更新（9年用ラベル） =====
+      document.querySelector('.kpi-card.plan-a .kpi-label').textContent = '9年1台 乗り続け';
+      document.querySelector('.kpi-card.plan-a .kpi-sublabel').textContent = '9年間の総コスト';
+      document.querySelector('.kpi-card.plan-b .kpi-label').textContent = '3年×3台 乗り替え';
+      document.querySelector('.kpi-card.plan-b .kpi-sublabel').textContent = '9年間の総コスト';
+
+      document.getElementById('kpi-total-a').textContent = '¥' + formatNumber(totalA);
+      document.getElementById('kpi-annual-a').textContent = '年間平均 ¥' + formatNumber(totalA / 9);
+      document.getElementById('kpi-total-b').textContent = '¥' + formatNumber(totalB);
+      document.getElementById('kpi-annual-b').textContent = '年間平均 ¥' + formatNumber(totalB / 9);
+
+      const diffCard = document.getElementById('kpi-diff-card');
+      const diffLabel = document.getElementById('kpi-diff-label');
+      const diffSublabel = document.getElementById('kpi-diff-sublabel');
+      const diffValue = document.getElementById('kpi-diff-value');
+      const diffAnnual = document.getElementById('kpi-diff-annual');
+      const diffBadge = document.getElementById('kpi-diff-badge');
+
+      const absDiff = Math.abs(diff);
+      diffValue.textContent = '¥' + formatNumber(absDiff);
+      diffAnnual.textContent = '年間 ¥' + formatNumber(absDiff / 9) + ' の差';
+
+      if (diff > 0) {
+        diffCard.className = 'kpi-card saving';
+        diffLabel.textContent = '差額';
+        diffSublabel.textContent = '3年×3台の方がお得';
+        diffBadge.textContent = '3年×3台がお得';
+      } else if (diff < 0) {
+        diffCard.className = 'kpi-card loss';
+        diffLabel.textContent = '差額';
+        diffSublabel.textContent = '9年1台の方がお得';
+        diffBadge.textContent = '9年1台がお得';
+      } else {
+        diffCard.className = 'kpi-card saving';
+        diffLabel.textContent = '差額';
+        diffSublabel.textContent = '同額';
+        diffBadge.textContent = '同額';
+      }
+
+      // テーブルヘッダー更新
+      const ths = document.querySelectorAll('.cost-table thead th');
+      ths[1].textContent = '9年1台 コスト';
+      ths[2].textContent = '9年1台 累計';
+      ths[3].textContent = '3年×3台 コスト';
+      ths[4].textContent = '3年×3台 累計';
+
+      // ===== 年別比較表更新 =====
+      updateTable9(costA, costB, cumA, cumB, totalA, totalB, {
+        purchasePrice, resale3yr, resale9yr, purchasePrice2, purchasePrice3,
+        shakenMaint, shakenLegal, periodicCheck, tire, battery, generalRepair, autoTax
+      });
+
+      // ===== グラフ更新 =====
+      updateLineChart9(cumA, cumB);
+    }
+
+    // ===== 9年 年別比較表 =====
+    function updateTable9(costA, costB, cumA, cumB, totalA, totalB, p) {
+      const tbody = document.getElementById('cost-table-body');
+      const shakenTotal = p.shakenMaint + p.shakenLegal;
+
+      // パターンA 内訳定義
+      const bdA = [];
+      bdA[0] = [['購入', p.purchasePrice]];
+      bdA[1] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[2] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[3] = [['車検', shakenTotal], ['バッテリー', p.battery], ['税', p.autoTax]];
+      bdA[4] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[5] = [['車検', shakenTotal], ['タイヤ', p.tire], ['税', p.autoTax]];
+      bdA[6] = [['一般整備', p.generalRepair], ['バッテリー', p.battery], ['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdA[7] = [['車検', shakenTotal], ['一般整備', p.generalRepair], ['税', p.autoTax]];
+      bdA[8] = [['点検', p.periodicCheck], ['一般整備', p.generalRepair], ['税', p.autoTax]];
+      bdA[9] = [['購入', p.purchasePrice], ['下取り', -p.resale9yr]];
+
+      // パターンB 内訳定義
+      const bdB = [];
+      // 1台目
+      bdB[0] = [['購入', p.purchasePrice]];
+      bdB[1] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[2] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[3] = [['売却', -p.resale3yr], ['購入', p.purchasePrice2]];
+      // 2台目
+      bdB[4] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[5] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[6] = [['売却', -p.resale3yr], ['購入', p.purchasePrice3]];
+      // 3台目
+      bdB[7] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[8] = [['点検', p.periodicCheck], ['税', p.autoTax]];
+      bdB[9] = [['売却', -p.resale3yr], ['購入', p.purchasePrice3]];
+
+      function formatCost(val) {
+        if (val >= 0) return '¥' + formatNumber(val);
+        return '-¥' + formatNumber(Math.abs(val));
+      }
+
+      let html = '';
+      for (let i = 0; i <= 9; i++) {
+        const yearDiff = costA[i] - costB[i];
+        const diffClass = yearDiff > 0 ? 'diff-positive' : yearDiff < 0 ? 'diff-negative' : '';
+
+        let rowClass = '';
+        if (i === 0 || i === 3 || i === 6 || i === 9) rowClass = 'highlight-purchase';
+
+        const breakdownA = buildBreakdown(bdA[i]);
+        const breakdownB = buildBreakdown(bdB[i]);
+
+        html += `<tr class="${rowClass}">
+          <td>${i}年目</td>
+          <td>${formatCost(costA[i])}<span class="cost-breakdown">${breakdownA}</span></td>
+          <td>¥${formatNumber(cumA[i])}</td>
+          <td>${formatCost(costB[i])}<span class="cost-breakdown">${breakdownB}</span></td>
+          <td>¥${formatNumber(cumB[i])}</td>
+          <td class="${diffClass}">${formatCost(yearDiff)}</td>
+        </tr>`;
+      }
+
+      // 合計行
+      const totalDiff = totalA - totalB;
+      const totalDiffClass = totalDiff > 0 ? 'diff-positive' : totalDiff < 0 ? 'diff-negative' : '';
+      html += `<tr class="row-total">
+        <td>合計</td>
+        <td colspan="2">¥${formatNumber(totalA)}</td>
+        <td colspan="2">¥${formatNumber(totalB)}</td>
+        <td class="${totalDiffClass}">${formatCost(totalDiff)}</td>
+      </tr>`;
+
+      tbody.innerHTML = html;
+    }
+
+    // ===== 9年 累積コスト推移グラフ =====
+    function updateLineChart9(cumA, cumB) {
+      const ctx = document.getElementById('line-chart').getContext('2d');
+      const labels = Array.from({ length: 10 }, (_, i) => i + '年');
+
+      if (lineChart) {
+        lineChart.data.labels = labels;
+        lineChart.data.datasets[0].data = cumA;
+        lineChart.data.datasets[1].data = cumB;
+        lineChart.update();
+        return;
+      }
+
+      lineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '9年1台',
+              data: cumA,
+              borderColor: '#2d6a8a',
+              backgroundColor: 'rgba(45,106,138,0.08)',
+              fill: false,
+              tension: 0.1,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              borderWidth: 2.5,
+            },
+            {
+              label: '3年×3台',
+              data: cumB,
+              borderColor: '#8a4a2d',
+              backgroundColor: 'rgba(138,74,45,0.08)',
+              fill: false,
+              tension: 0.1,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              borderWidth: 2.5,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                font: { family: "'Noto Sans JP', sans-serif", size: 12 },
+                usePointStyle: true,
+                padding: 16,
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': ¥' + formatNumber(context.raw);
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: {
+                font: { family: "'Noto Sans JP', sans-serif", size: 11 }
+              }
+            },
+            y: {
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: {
+                font: { family: "'Noto Sans JP', sans-serif", size: 11 },
+                callback: function(val) {
+                  if (val >= 10000) return '¥' + (val / 10000).toFixed(0) + '万';
+                  return '¥' + formatNumber(val);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // ===== 印刷機能 =====
+    function buildPrintParams() {
+      const fmt = v => '¥' + formatNumber(v);
+      const g = id => getVal(id);
+
+      const modeLabels = { '9yr': '9年比較', '10yr': '10年比較', '15yr': '15年比較' };
+      let items = [];
+      items.push(['比較モード', modeLabels[currentMode]]);
+      items.push(['新車購入価格', fmt(g('purchase-price'))]);
+
+      if (currentMode === '9yr') {
+        items.push(['3年後売却額', fmt(g('resale-3yr'))]);
+        items.push(['9年落ち下取り額', fmt(g('resale-9yr'))]);
+      }
+      if (currentMode === '10yr' || currentMode === '15yr') {
+        items.push(['5年後売却額', fmt(g('resale-5yr'))]);
+      }
+      if (currentMode === '10yr') {
+        items.push(['10年落ち下取り額', fmt(g('resale-10yr'))]);
+      }
+
+      items.push(['2台目購入価格', fmt(g('purchase-price-2'))]);
+
+      if (currentMode === '9yr' || currentMode === '15yr') {
+        items.push(['3台目購入価格', fmt(g('purchase-price-3'))]);
+      }
+      if (currentMode === '15yr') {
+        items.push(['15年落ち下取り額', fmt(g('resale-15yr'))]);
+      }
+
+      items.push(['車検整備', fmt(g('shaken-maintenance'))]);
+      items.push(['車検法定', fmt(g('shaken-legal'))]);
+      items.push(['定期点検', fmt(g('periodic-check'))]);
+      items.push(['タイヤ', fmt(g('tire'))]);
+      items.push(['バッテリー', fmt(g('battery'))]);
+      items.push(['一般整備', fmt(g('general-repair'))]);
+      items.push(['自動車税', fmt(g('auto-tax'))]);
+
+      const el = document.getElementById('print-params');
+      el.innerHTML =
+        '<div class="print-params-title">入力条件</div>' +
+        '<div class="print-params-grid">' +
+        items.map(([k,v]) => '<span>' + k + ': ' + v + '</span>').join('') +
+        '</div>';
+    }
+
+    function printPage() {
+      buildPrintParams();
+      window.print();
+    }
+
+    // ===== 初期計算 =====
+    calculate();
+  </script>
+
+</body>
+</html>
