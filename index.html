@@ -859,7 +859,7 @@
             </div>
             <div id="field-wrap-resale-10yr">
               <div class="field">
-                <label class="field-label">10年落ち下取り額</label>
+                <label class="field-label">10年後売却額</label>
                 <div class="field-control">
                   <input type="range" id="slider-resale-10yr" min="0" max="3000000" step="100000" value="800000">
                   <div class="input-wrap">
@@ -2161,7 +2161,7 @@
         items.push(['5年後売却額', fmt(g('resale-5yr'))]);
       }
       if (currentMode === '10yr') {
-        items.push(['10年落ち下取り額', fmt(g('resale-10yr'))]);
+        items.push(['10年後売却額', fmt(g('resale-10yr'))]);
       }
 
       items.push(['2台目購入価格', fmt(g('purchase-price-2'))]);
