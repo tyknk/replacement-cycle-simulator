@@ -577,18 +577,19 @@
     }
 
     /* ===== レスポンシブ ===== */
+    /* ===== タブレット (900px以下) ===== */
     @media (max-width: 900px) {
       .main-layout {
         grid-template-columns: 1fr;
       }
 
       .kpi-section {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
         gap: 10px;
       }
-
-      .mode-tabs {
-        flex-direction: column;
+      .kpi-card.saving,
+      .kpi-card.loss {
+        grid-column: 1 / -1;
       }
 
       .kpi-card {
@@ -604,22 +605,113 @@
       }
     }
 
+    /* ===== スマホ (600px以下) ===== */
     @media (max-width: 600px) {
+      /* ヘッダー: 折り返し対応 */
+      .header {
+        flex-wrap: wrap;
+        padding: 12px 16px 10px;
+        gap: 4px 12px;
+      }
       .header h1 {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
+      }
+      .header p {
+        font-size: 0.68rem;
+        flex-basis: 100%;
+        order: 3;
+      }
+      .print-btn {
+        display: none;
       }
 
+      /* 説明文: スマホではデフォルト閉じ */
+      .intro {
+        padding: 12px 14px;
+        margin-bottom: 16px;
+      }
+
+      /* モードタブ: 横並び維持・コンパクト */
+      .mode-tabs {
+        flex-direction: row !important;
+        gap: 0;
+      }
+      .mode-tab {
+        font-size: 0.78rem;
+        padding: 8px 6px;
+      }
+      .mode-tab-sub {
+        font-size: 0.58rem;
+      }
+
+      /* KPI: A/B横並び、差額だけ全幅 */
+      .kpi-section {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .kpi-card {
+        padding: 10px 8px;
+      }
+      .kpi-label { font-size: 0.72rem; }
+      .kpi-sublabel { font-size: 0.62rem; }
+      .kpi-value { font-size: 1.15rem; }
+      .kpi-annual { font-size: 0.65rem; }
+      .kpi-badge { font-size: 0.6rem; padding: 1px 8px; }
+
+      /* グラフ */
       .chart-container {
-        height: 250px;
+        height: 220px;
+      }
+      .chart-card {
+        padding: 10px;
+      }
+      .chart-card h3 {
+        font-size: 0.85rem;
       }
 
+      /* テーブル: 横スクロール */
+      .table-scroll-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
       .cost-table {
-        font-size: 0.72rem;
+        font-size: 0.7rem;
+        min-width: 640px;
       }
-
       .cost-table tbody td,
       .cost-table thead th {
-        padding: 5px 6px;
+        padding: 4px 6px;
+      }
+      .table-section h3 {
+        font-size: 0.9rem;
+      }
+
+      /* 入力パネル */
+      .input-section {
+        margin-bottom: 12px;
+      }
+      .field-label {
+        font-size: 0.75rem;
+      }
+      .input-wrap input[type="text"] {
+        width: 90px;
+        font-size: 0.8rem;
+      }
+
+      /* コンテナ */
+      .container {
+        padding: 10px;
+      }
+
+      /* 注記 */
+      .notes-section {
+        font-size: 0.75rem;
+      }
+      .notes-section h3 {
+        font-size: 0.95rem;
+      }
+      .notes-section h4 {
+        font-size: 0.82rem;
       }
     }
 
@@ -1006,6 +1098,7 @@
     <!-- 年別コスト比較表 -->
     <div class="table-section">
       <h3>年別コスト比較表</h3>
+      <div class="table-scroll-wrap">
       <table class="cost-table">
         <thead>
           <tr>
@@ -1020,6 +1113,7 @@
         <tbody id="cost-table-body">
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- 印刷用 入力条件サマリー（画面では非表示） -->
@@ -2192,6 +2286,12 @@
     function printPage() {
       buildPrintParams();
       window.print();
+    }
+
+    // ===== スマホ: 説明文をデフォルト閉じ =====
+    if (window.innerWidth <= 600) {
+      const intro = document.querySelector('details.intro');
+      if (intro) intro.removeAttribute('open');
     }
 
     // ===== 初期計算 =====
