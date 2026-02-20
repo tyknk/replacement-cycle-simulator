@@ -488,6 +488,24 @@
       line-height: 1.5;
     }
 
+    /* ===== プラン別サブセクション ===== */
+    .plan-subsection {
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 12px 0;
+    }
+    .plan-subsection-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--ink-light);
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .plan-subsection-a .plan-subsection-title { color: var(--plan-a); }
+    .plan-subsection-b .plan-subsection-title { color: var(--plan-b); }
+
     /* ===== モード切替タブ ===== */
     .mode-tabs {
       display: flex;
@@ -903,8 +921,9 @@
             <span class="section-toggle">▼</span>
           </div>
           <div class="section-body">
+            <!-- 共通：新車購入価格 -->
             <div class="field">
-              <label class="field-label">新車購入価格</label>
+              <label class="field-label" id="label-purchase-price">新車購入価格</label>
               <div class="field-control">
                 <input type="range" id="slider-purchase-price" min="1000000" max="8000000" step="100000" value="4800000">
                 <div class="input-wrap">
@@ -913,18 +932,8 @@
                 </div>
               </div>
             </div>
-            <div id="field-wrap-resale-3yr" style="display:none;">
-              <div class="field">
-                <label class="field-label">3年後売却額（残価）</label>
-                <div class="field-control">
-                  <input type="range" id="slider-resale-3yr" min="0" max="5000000" step="100000" value="3000000">
-                  <div class="input-wrap">
-                    <input type="text" id="input-resale-3yr" value="3,000,000">
-                    <span class="input-unit">円</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- 10yr/15yr: 5年後売却額（フラット） -->
+            <span id="resale5yr-flat-slot"></span>
             <div id="field-wrap-resale-5yr">
               <div class="field">
                 <label class="field-label">5年後売却額（残価）</label>
@@ -937,9 +946,11 @@
                 </div>
               </div>
             </div>
-            <div id="field-wrap-resale-9yr" style="display:none;">
+            <!-- 9yr Plan A サブセクション -->
+            <div id="plan-section-9yr-a" class="plan-subsection plan-subsection-a" style="display:none;">
+              <div class="plan-subsection-title">9年1台 乗り続け</div>
               <div class="field">
-                <label class="field-label">9年落ち下取り額</label>
+                <label class="field-label">9年後売却額</label>
                 <div class="field-control">
                   <input type="range" id="slider-resale-9yr" min="0" max="3000000" step="100000" value="1000000">
                   <div class="input-wrap">
@@ -949,6 +960,8 @@
                 </div>
               </div>
             </div>
+            <!-- 10yr: 10年後売却額（フラット） -->
+            <span id="resale10yr-flat-slot"></span>
             <div id="field-wrap-resale-10yr">
               <div class="field">
                 <label class="field-label">10年後売却額</label>
@@ -961,18 +974,30 @@
                 </div>
               </div>
             </div>
-            <div class="field">
-              <label class="field-label">2台目購入価格</label>
-              <div class="field-control">
-                <input type="range" id="slider-purchase-price-2" min="1000000" max="8000000" step="100000" value="4800000">
-                <div class="input-wrap">
-                  <input type="text" id="input-purchase-price-2" value="4,800,000">
-                  <span class="input-unit">円</span>
+            <!-- 9yr Plan B サブセクション -->
+            <div id="plan-section-9yr-b" class="plan-subsection plan-subsection-b" style="display:none;">
+              <div class="plan-subsection-title">3年×3台 乗り替え</div>
+              <div class="field">
+                <label class="field-label">1台目売却額（3年目）</label>
+                <div class="field-control">
+                  <input type="range" id="slider-resale-3yr" min="0" max="5000000" step="100000" value="3000000">
+                  <div class="input-wrap">
+                    <input type="text" id="input-resale-3yr" value="3,000,000">
+                    <span class="input-unit">円</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <!-- 3台目購入価格（9yr + 15yr で表示） -->
-            <div id="field-wrap-purchase-price-3" style="display:none;">
+              <span id="pp2-9yr-slot"></span>
+              <div class="field">
+                <label class="field-label">2台目売却額（6年目）</label>
+                <div class="field-control">
+                  <input type="range" id="slider-resale-3yr-2" min="0" max="5000000" step="100000" value="3000000">
+                  <div class="input-wrap">
+                    <input type="text" id="input-resale-3yr-2" value="3,000,000">
+                    <span class="input-unit">円</span>
+                  </div>
+                </div>
+              </div>
               <div class="field">
                 <label class="field-label">3台目購入価格</label>
                 <div class="field-control">
@@ -982,12 +1007,63 @@
                     <span class="input-unit">円</span>
                   </div>
                 </div>
+                <div class="field-note">※ 6年目の購入車両</div>
+              </div>
+              <div class="field">
+                <label class="field-label">3台目売却額（9年目）</label>
+                <div class="field-control">
+                  <input type="range" id="slider-resale-3yr-3" min="0" max="5000000" step="100000" value="3000000">
+                  <div class="input-wrap">
+                    <input type="text" id="input-resale-3yr-3" value="3,000,000">
+                    <span class="input-unit">円</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <!-- 15年落ち下取り額（15yr のみ表示） -->
+            <!-- 10yr/15yr Plan A サブセクション -->
+            <div id="plan-section-long-a" class="plan-subsection plan-subsection-a" style="display:none;">
+              <div class="plan-subsection-title" id="title-long-a"></div>
+              <span id="slot-long-a"></span>
+            </div>
+            <!-- 10yr/15yr Plan B サブセクション -->
+            <div id="plan-section-long-b" class="plan-subsection plan-subsection-b" style="display:none;">
+              <div class="plan-subsection-title" id="title-long-b"></div>
+              <span id="slot-long-b"></span>
+            </div>
+            <!-- 乗り替え車両価格（9年目・両プラン共通） -->
+            <div id="field-wrap-purchase-price-next" style="display:none;">
+              <div class="field">
+                <label class="field-label">乗り替え車両価格（9年目）</label>
+                <div class="field-control">
+                  <input type="range" id="slider-purchase-price-next" min="1000000" max="8000000" step="100000" value="4800000">
+                  <div class="input-wrap">
+                    <input type="text" id="input-purchase-price-next" value="4,800,000">
+                    <span class="input-unit">円</span>
+                  </div>
+                </div>
+                <div class="field-note">※ 両プラン共通：9年目に購入する次の車両</div>
+              </div>
+            </div>
+            <!-- 2台目購入価格（全モード共通、9yrではPlan B内に移動） -->
+            <span id="pp2-flat-slot"></span>
+            <div id="field-wrap-purchase-price-2">
+              <div class="field">
+                <label class="field-label" id="label-purchase-price-2">2台目購入価格</label>
+                <div class="field-control">
+                  <input type="range" id="slider-purchase-price-2" min="1000000" max="8000000" step="100000" value="4800000">
+                  <div class="input-wrap">
+                    <input type="text" id="input-purchase-price-2" value="4,800,000">
+                    <span class="input-unit">円</span>
+                  </div>
+                </div>
+                <div class="field-note" id="note-purchase-price-2" style="display:none;">※ 両プラン共通：乗り替え時に購入する車両</div>
+              </div>
+            </div>
+            <!-- 15yr: 15年後売却額（フラット） -->
+            <span id="resale15yr-flat-slot"></span>
             <div id="field-wrap-resale-15yr" style="display:none;">
               <div class="field">
-                <label class="field-label">15年落ち下取り額</label>
+                <label class="field-label">15年後売却額</label>
                 <div class="field-control">
                   <input type="range" id="slider-resale-15yr" min="0" max="2000000" step="10000" value="300000">
                   <div class="input-wrap">
@@ -1126,7 +1202,7 @@
       <h4>比較モデル</h4>
       <ul>
         <li>9年後に両プランとも「次の新車を購入した状態」で比較します。</li>
-        <li><strong>9年1台</strong>：9年目に旧車を下取りに出して新車を購入。</li>
+        <li><strong>9年1台</strong>：9年目に旧車を売却して新車を購入。</li>
         <li><strong>3年×3台</strong>：3年目・6年目・9年目にそれぞれ売却し新車を購入（計4台目まで）。</li>
       </ul>
 
@@ -1152,7 +1228,7 @@
 
       <h4>計算に含まれるもの</h4>
       <ul>
-        <li>車両購入費 / 下取り・売却額 / 車検（整備＋法定費用） / 定期点検</li>
+        <li>車両購入費 / 売却額 / 車検（整備＋法定費用） / 定期点検</li>
         <li>タイヤ交換 / バッテリー交換 / 一般整備（保証切れ後） / 自動車税</li>
       </ul>
 
@@ -1170,7 +1246,7 @@
       <h4>比較モデル</h4>
       <ul>
         <li>10年後に両プランとも「次の新車を購入した状態」で比較します。</li>
-        <li><strong>10年1台</strong>：10年目に旧車を下取りに出して新車を購入。</li>
+        <li><strong>10年1台</strong>：10年目に旧車を売却して新車を購入。</li>
         <li><strong>5年×2台</strong>：5年目・10年目にそれぞれ売却し新車を購入（計3台目まで）。</li>
       </ul>
 
@@ -1194,7 +1270,7 @@
 
       <h4>計算に含まれるもの</h4>
       <ul>
-        <li>車両購入費 / 下取り・売却額 / 車検（整備＋法定費用） / 定期点検</li>
+        <li>車両購入費 / 売却額 / 車検（整備＋法定費用） / 定期点検</li>
         <li>タイヤ交換 / バッテリー交換 / 一般整備（保証切れ後） / 自動車税</li>
       </ul>
 
@@ -1212,7 +1288,7 @@
       <h4>比較モデル</h4>
       <ul>
         <li>15年後に両プランとも「次の新車を購入した状態」で比較します。</li>
-        <li><strong>15年1台</strong>：15年目に旧車を下取りに出して新車を購入。</li>
+        <li><strong>15年1台</strong>：15年目に旧車を売却して新車を購入。</li>
         <li><strong>5年×3台</strong>：5年目・10年目・15年目にそれぞれ売却し新車を購入（計4台目まで）。</li>
       </ul>
 
@@ -1238,7 +1314,7 @@
 
       <h4>計算に含まれるもの</h4>
       <ul>
-        <li>車両購入費 / 下取り・売却額 / 車検（整備＋法定費用） / 定期点検</li>
+        <li>車両購入費 / 売却額 / 車検（整備＋法定費用） / 定期点検</li>
         <li>タイヤ交換 / バッテリー交換 / 一般整備（保証切れ後） / 自動車税</li>
       </ul>
 
@@ -1273,6 +1349,8 @@
     const fields = [
       { id: 'purchase-price' },
       { id: 'resale-3yr' },
+      { id: 'resale-3yr-2' },
+      { id: 'resale-3yr-3' },
       { id: 'resale-5yr' },
       { id: 'resale-9yr' },
       { id: 'resale-10yr' },
@@ -1285,6 +1363,7 @@
       { id: 'general-repair' },
       { id: 'auto-tax' },
       { id: 'purchase-price-3' },
+      { id: 'purchase-price-next' },
       { id: 'resale-15yr' },
     ];
 
@@ -1332,13 +1411,71 @@
       document.getElementById('tab-10yr').classList.toggle('active', mode === '10yr');
       document.getElementById('tab-15yr').classList.toggle('active', mode === '15yr');
 
-      // フィールド表示制御
-      document.getElementById('field-wrap-resale-3yr').style.display = (mode === '9yr') ? '' : 'none';
+      // --- フィールドを全てフラット位置に戻す（リセット） ---
+      document.getElementById('resale5yr-flat-slot').after(
+        document.getElementById('field-wrap-resale-5yr'));
+      document.getElementById('resale10yr-flat-slot').after(
+        document.getElementById('field-wrap-resale-10yr'));
+      document.getElementById('resale15yr-flat-slot').after(
+        document.getElementById('field-wrap-resale-15yr'));
+
+      // 2台目購入価格フィールドの位置移動
+      const pp2El = document.getElementById('field-wrap-purchase-price-2');
+      if (mode === '9yr') {
+        document.getElementById('pp2-9yr-slot').after(pp2El);
+      } else {
+        document.getElementById('pp2-flat-slot').after(pp2El);
+      }
+
+      // 9yr サブセクション表示制御
+      document.getElementById('plan-section-9yr-a').style.display = (mode === '9yr') ? '' : 'none';
+      document.getElementById('plan-section-9yr-b').style.display = (mode === '9yr') ? '' : 'none';
+      document.getElementById('field-wrap-purchase-price-next').style.display = (mode === '9yr') ? '' : 'none';
+
+      // --- 10yr/15yr サブセクション ---
+      const longA = document.getElementById('plan-section-long-a');
+      const longB = document.getElementById('plan-section-long-b');
+
+      if (mode === '10yr') {
+        longA.style.display = '';
+        longB.style.display = '';
+        document.getElementById('title-long-a').textContent = '10年1台 乗り続け';
+        document.getElementById('title-long-b').textContent = '5年×2台 乗り替え';
+        document.getElementById('slot-long-a').after(
+          document.getElementById('field-wrap-resale-10yr'));
+        document.getElementById('slot-long-b').after(
+          document.getElementById('field-wrap-resale-5yr'));
+      } else if (mode === '15yr') {
+        longA.style.display = '';
+        longB.style.display = '';
+        document.getElementById('title-long-a').textContent = '15年1台 乗り続け';
+        document.getElementById('title-long-b').textContent = '5年×3台 乗り替え';
+        document.getElementById('slot-long-a').after(
+          document.getElementById('field-wrap-resale-15yr'));
+        document.getElementById('slot-long-b').after(
+          document.getElementById('field-wrap-resale-5yr'));
+      } else {
+        longA.style.display = 'none';
+        longB.style.display = 'none';
+      }
+
+      // フラットフィールド表示制御
       document.getElementById('field-wrap-resale-5yr').style.display = (mode !== '9yr') ? '' : 'none';
-      document.getElementById('field-wrap-resale-9yr').style.display = (mode === '9yr') ? '' : 'none';
       document.getElementById('field-wrap-resale-10yr').style.display = (mode === '10yr') ? '' : 'none';
-      document.getElementById('field-wrap-purchase-price-3').style.display = (mode !== '10yr') ? '' : 'none';
       document.getElementById('field-wrap-resale-15yr').style.display = (mode === '15yr') ? '' : 'none';
+
+      // --- ラベル切替 ---
+      document.getElementById('label-purchase-price').textContent = '新車購入価格（1台目）';
+
+      const pp2Label = document.getElementById('label-purchase-price-2');
+      const pp2Note = document.getElementById('note-purchase-price-2');
+      if (mode === '9yr') {
+        pp2Label.textContent = '2台目購入価格';
+        pp2Note.style.display = 'none';
+      } else {
+        pp2Label.textContent = '乗り替え車両価格';
+        pp2Note.style.display = '';
+      }
 
       // チャートを破棄して再作成に備える
       if (lineChart) { lineChart.destroy(); lineChart = null; }
@@ -1415,7 +1552,7 @@
       costA[7] = shakenTotal + generalRepair + autoTax;                      // 年7: 車検+一般整備
       costA[8] = periodicCheck + generalRepair + autoTax;                    // 年8
       costA[9] = shakenTotal + generalRepair + autoTax;                      // 年9: 車検+一般整備
-      costA[10] = purchasePrice - resale10yr;                                 // 年10: 次の新車購入（下取り差引）
+      costA[10] = purchasePrice2 - resale10yr;                               // 年10: 次の新車購入（売却差引）
 
       // パターンB: 5年×2台乗り替え
       const costB = [];
@@ -1519,7 +1656,7 @@
       bdA[7]  = [['車検', p.shakenMaint + p.shakenLegal], ['一般整備', p.generalRepair], ['税', p.autoTax]];
       bdA[8]  = [['点検', p.periodicCheck], ['一般整備', p.generalRepair], ['税', p.autoTax]];
       bdA[9]  = [['車検', p.shakenMaint + p.shakenLegal], ['一般整備', p.generalRepair], ['税', p.autoTax]];
-      bdA[10] = [['購入', p.purchasePrice], ['下取り', -p.resale10yr]];
+      bdA[10] = [['購入', p.purchasePrice2], ['売却', -p.resale10yr]];
 
       // パターンB 内訳定義
       const bdB = [];
@@ -1669,7 +1806,6 @@
       const resale5yr = getVal('resale-5yr');
       const resale15yr = getVal('resale-15yr');
       const purchasePrice2 = getVal('purchase-price-2');
-      const purchasePrice3 = getVal('purchase-price-3');
       const shakenMaint = getVal('shaken-maintenance');
       const shakenLegal = getVal('shaken-legal');
       const periodicCheck = getVal('periodic-check');
@@ -1697,7 +1833,7 @@
       costA[12] = generalRepair + battery + periodicCheck + autoTax;          // 年12: 一般整備+バッテリー+点検
       costA[13] = shakenTotal + generalRepair + autoTax;                      // 年13: 車検+一般整備
       costA[14] = periodicCheck + generalRepair + autoTax;                    // 年14: 点検+一般整備
-      costA[15] = purchasePrice - resale15yr;                                 // 年15: 次の新車購入（15年落ち下取り差引）
+      costA[15] = purchasePrice2 - resale15yr;                                // 年15: 次の新車購入（売却差引）
 
       // パターンB: 5年×3台乗り替え
       const costB = [];
@@ -1713,13 +1849,13 @@
       costB[7]  = periodicCheck + autoTax;                                    // 年7
       costB[8]  = shakenTotal + battery + autoTax;                            // 年8: 2台目車検+バッテリー
       costB[9]  = periodicCheck + autoTax;                                    // 年9
-      costB[10] = -resale5yr + purchasePrice3;                                // 年10: 売却+3台目購入
+      costB[10] = -resale5yr + purchasePrice2;                                // 年10: 売却+3台目購入
       // 3台目
       costB[11] = periodicCheck + autoTax;                                    // 年11: 3台目1年目
       costB[12] = periodicCheck + autoTax;                                    // 年12
       costB[13] = shakenTotal + battery + autoTax;                            // 年13: 3台目車検+バッテリー
       costB[14] = periodicCheck + autoTax;                                    // 年14
-      costB[15] = -resale5yr + purchasePrice3;                                // 年15: 売却+4台目購入
+      costB[15] = -resale5yr + purchasePrice2;                                // 年15: 売却+4台目購入
 
       // 累計計算
       const cumA = [costA[0]];
@@ -1781,7 +1917,7 @@
 
       // ===== 年別比較表更新 =====
       updateTable15(costA, costB, cumA, cumB, totalA, totalB, {
-        purchasePrice, resale5yr, resale15yr, purchasePrice2, purchasePrice3,
+        purchasePrice, resale5yr, resale15yr, purchasePrice2,
         shakenMaint, shakenLegal, periodicCheck, tire, battery, generalRepair, autoTax
       });
 
@@ -1811,7 +1947,7 @@
       bdA[12] = [['一般整備', p.generalRepair], ['バッテリー', p.battery], ['点検', p.periodicCheck], ['税', p.autoTax]];
       bdA[13] = [['車検', shakenTotal], ['一般整備', p.generalRepair], ['税', p.autoTax]];
       bdA[14] = [['点検', p.periodicCheck], ['一般整備', p.generalRepair], ['税', p.autoTax]];
-      bdA[15] = [['購入', p.purchasePrice], ['下取り', -p.resale15yr]];
+      bdA[15] = [['購入', p.purchasePrice2], ['売却', -p.resale15yr]];
 
       // パターンB 内訳定義
       const bdB = [];
@@ -1827,13 +1963,13 @@
       bdB[7]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
       bdB[8]  = [['車検', shakenTotal], ['バッテリー', p.battery], ['税', p.autoTax]];
       bdB[9]  = [['点検', p.periodicCheck], ['税', p.autoTax]];
-      bdB[10] = [['売却', -p.resale5yr], ['購入', p.purchasePrice3]];
+      bdB[10] = [['売却', -p.resale5yr], ['購入', p.purchasePrice2]];
       // 3台目
       bdB[11] = [['点検', p.periodicCheck], ['税', p.autoTax]];
       bdB[12] = [['点検', p.periodicCheck], ['税', p.autoTax]];
       bdB[13] = [['車検', shakenTotal], ['バッテリー', p.battery], ['税', p.autoTax]];
       bdB[14] = [['点検', p.periodicCheck], ['税', p.autoTax]];
-      bdB[15] = [['売却', -p.resale5yr], ['購入', p.purchasePrice3]];
+      bdB[15] = [['売却', -p.resale5yr], ['購入', p.purchasePrice2]];
 
       function formatCost(val) {
         if (val >= 0) return '¥' + formatNumber(val);
@@ -1966,9 +2102,12 @@
     function calculate9() {
       const purchasePrice = getVal('purchase-price');
       const resale3yr = getVal('resale-3yr');
+      const resale3yr2 = getVal('resale-3yr-2');
+      const resale3yr3 = getVal('resale-3yr-3');
       const resale9yr = getVal('resale-9yr');
       const purchasePrice2 = getVal('purchase-price-2');
       const purchasePrice3 = getVal('purchase-price-3');
+      const purchasePriceNext = getVal('purchase-price-next');
       const shakenMaint = getVal('shaken-maintenance');
       const shakenLegal = getVal('shaken-legal');
       const periodicCheck = getVal('periodic-check');
@@ -1990,7 +2129,7 @@
       costA[6] = generalRepair + battery + periodicCheck + autoTax;          // 年6: 一般整備+バッテリー+点検（保証切れ）
       costA[7] = shakenTotal + generalRepair + autoTax;                      // 年7: 車検+一般整備
       costA[8] = periodicCheck + generalRepair + autoTax;                    // 年8: 点検+一般整備
-      costA[9] = purchasePrice - resale9yr;                                  // 年9: 次の新車購入（9年落ち下取り差引）
+      costA[9] = purchasePriceNext - resale9yr;                              // 年9: 次の新車購入（9年後売却差引）
 
       // パターンB: 3年×3台乗り替え
       const costB = [];
@@ -2002,11 +2141,11 @@
       // 2台目
       costB[4] = periodicCheck + autoTax;                                    // 年4: 点検+税
       costB[5] = periodicCheck + autoTax;                                    // 年5: 点検+税
-      costB[6] = -resale3yr + purchasePrice3;                                // 年6: 2台目売却+3台目購入
+      costB[6] = -resale3yr2 + purchasePrice3;                               // 年6: 2台目売却+3台目購入
       // 3台目
       costB[7] = periodicCheck + autoTax;                                    // 年7: 点検+税
       costB[8] = periodicCheck + autoTax;                                    // 年8: 点検+税
-      costB[9] = -resale3yr + purchasePrice3;                                // 年9: 3台目売却+4台目購入
+      costB[9] = -resale3yr3 + purchasePriceNext;                            // 年9: 3台目売却+乗り替え車両購入（Plan A共通）
 
       // 累計計算
       const cumA = [costA[0]];
@@ -2068,7 +2207,7 @@
 
       // ===== 年別比較表更新 =====
       updateTable9(costA, costB, cumA, cumB, totalA, totalB, {
-        purchasePrice, resale3yr, resale9yr, purchasePrice2, purchasePrice3,
+        purchasePrice, resale3yr, resale3yr2, resale3yr3, resale9yr, purchasePrice2, purchasePrice3, purchasePriceNext,
         shakenMaint, shakenLegal, periodicCheck, tire, battery, generalRepair, autoTax
       });
 
@@ -2092,7 +2231,7 @@
       bdA[6] = [['一般整備', p.generalRepair], ['バッテリー', p.battery], ['点検', p.periodicCheck], ['税', p.autoTax]];
       bdA[7] = [['車検', shakenTotal], ['一般整備', p.generalRepair], ['税', p.autoTax]];
       bdA[8] = [['点検', p.periodicCheck], ['一般整備', p.generalRepair], ['税', p.autoTax]];
-      bdA[9] = [['購入', p.purchasePrice], ['下取り', -p.resale9yr]];
+      bdA[9] = [['購入', p.purchasePriceNext], ['売却', -p.resale9yr]];
 
       // パターンB 内訳定義
       const bdB = [];
@@ -2104,11 +2243,11 @@
       // 2台目
       bdB[4] = [['点検', p.periodicCheck], ['税', p.autoTax]];
       bdB[5] = [['点検', p.periodicCheck], ['税', p.autoTax]];
-      bdB[6] = [['売却', -p.resale3yr], ['購入', p.purchasePrice3]];
+      bdB[6] = [['売却', -p.resale3yr2], ['購入', p.purchasePrice3]];
       // 3台目
       bdB[7] = [['点検', p.periodicCheck], ['税', p.autoTax]];
       bdB[8] = [['点検', p.periodicCheck], ['税', p.autoTax]];
-      bdB[9] = [['売却', -p.resale3yr], ['購入', p.purchasePrice3]];
+      bdB[9] = [['売却', -p.resale3yr3], ['購入', p.purchasePriceNext]];
 
       function formatCost(val) {
         if (val >= 0) return '¥' + formatNumber(val);
@@ -2245,11 +2384,14 @@
       const modeLabels = { '9yr': '9年比較', '10yr': '10年比較', '15yr': '15年比較' };
       let items = [];
       items.push(['比較モード', modeLabels[currentMode]]);
-      items.push(['新車購入価格', fmt(g('purchase-price'))]);
+      items.push(['新車購入価格（1台目）', fmt(g('purchase-price'))]);
 
       if (currentMode === '9yr') {
-        items.push(['3年後売却額', fmt(g('resale-3yr'))]);
-        items.push(['9年落ち下取り額', fmt(g('resale-9yr'))]);
+        items.push(['9年後売却額', fmt(g('resale-9yr'))]);
+        items.push(['乗り替え車両価格', fmt(g('purchase-price-next'))]);
+        items.push(['1台目売却額(3年目)', fmt(g('resale-3yr'))]);
+        items.push(['2台目売却額(6年目)', fmt(g('resale-3yr-2'))]);
+        items.push(['3台目売却額(9年目)', fmt(g('resale-3yr-3'))]);
       }
       if (currentMode === '10yr' || currentMode === '15yr') {
         items.push(['5年後売却額', fmt(g('resale-5yr'))]);
@@ -2258,13 +2400,17 @@
         items.push(['10年後売却額', fmt(g('resale-10yr'))]);
       }
 
-      items.push(['2台目購入価格', fmt(g('purchase-price-2'))]);
+      if (currentMode === '9yr') {
+        items.push(['2台目購入価格', fmt(g('purchase-price-2'))]);
+      } else {
+        items.push(['乗り替え車両価格', fmt(g('purchase-price-2'))]);
+      }
 
-      if (currentMode === '9yr' || currentMode === '15yr') {
+      if (currentMode === '9yr') {
         items.push(['3台目購入価格', fmt(g('purchase-price-3'))]);
       }
       if (currentMode === '15yr') {
-        items.push(['15年落ち下取り額', fmt(g('resale-15yr'))]);
+        items.push(['15年後売却額', fmt(g('resale-15yr'))]);
       }
 
       items.push(['車検整備', fmt(g('shaken-maintenance'))]);
@@ -2295,7 +2441,7 @@
     }
 
     // ===== 初期計算 =====
-    calculate();
+    switchMode('10yr');
   </script>
 
 </body>
